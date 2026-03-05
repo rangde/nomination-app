@@ -1,0 +1,75 @@
+{
+ "app": "nomination",
+ "creation": "2026-02-25 14:19:44.270111",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "loan",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Nomination Form",
+   "link_to": "Nomination Form",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Reports",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Dashboards",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Section Break"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Loan overview",
+   "link_to": "Loan overview",
+   "link_type": "Dashboard",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 1,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Pragati CLF",
+   "link_to": "Pragati CLF",
+   "link_type": "Dashboard",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-02-25 14:21:10.314991",
+ "modified_by": "Administrator",
+ "module": "Nomination",
+ "name": "Nomination",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Nomination"
+}

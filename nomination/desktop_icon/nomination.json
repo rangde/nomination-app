@@ -1,0 +1,19 @@
+{
+ "app": "nomination",
+ "bg_color": "blue",
+ "creation": "2026-02-16 18:21:23.377308",
+ "docstatus": 0,
+ "doctype": "Desktop Icon",
+ "hidden": 0,
+ "icon_type": "Link",
+ "idx": 0,
+ "label": "Nomination",
+ "link_type": "Workspace Sidebar",
+ "modified": "2026-02-16 18:22:48.107103",
+ "modified_by": "Administrator",
+ "name": "Nomination",
+ "owner": "Administrator",
+ "restrict_removal": 0,
+ "roles": [],
+ "standard": 1
+}

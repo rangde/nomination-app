@@ -1,0 +1,38 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-02-23 01:55:42.869789",
+  "name": "VO Approved",
+  "style": "Primary",
+  "workflow_state_name": "VO Approved"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-02-18 17:56:55.148810",
+  "name": "CLF Approved",
+  "style": "",
+  "workflow_state_name": "CLF Approved"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-02-18 17:55:56.364981",
+  "name": "Draft",
+  "style": "",
+  "workflow_state_name": "Draft"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Workflow State",
+  "icon": "",
+  "modified": "2026-02-18 18:04:52.185346",
+  "name": "SHG Proposed",
+  "style": "",
+  "workflow_state_name": "SHG Proposed"
+ }
+]
