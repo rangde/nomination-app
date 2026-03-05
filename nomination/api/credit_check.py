@@ -22,6 +22,11 @@ def credit_score(**kwargs):
 	frappe.cache().delete_value(f"otp_verified_{mobile}")
 
 	try:
+		mobile = (kwargs.get("mobile_number") or "").strip()
+
+		if not mobile:
+			return {"status": 0, "msg": "Mobile number required"}
+
 		if not mobile.startswith("91"):
 			mobile = f"91{mobile}"
 
