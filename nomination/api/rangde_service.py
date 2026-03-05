@@ -26,9 +26,9 @@ def get_api_key():
 def initiate_session():
 	url = f"{get_base_url()}/login"
 
-	headers = {get_headers(): get_api_key(), "Content-Type": "application/json"}
+	headers = {get_headers(): get_api_key()}
 
-	response = requests.post(url, headers=headers, timeout=10)
+	response = requests.get(url, headers=headers, timeout=10)
 
 	if response.status_code != 200:
 		frappe.throw("Failed to initiate RangDe session")
