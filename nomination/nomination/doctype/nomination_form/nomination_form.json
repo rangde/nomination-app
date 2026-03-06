@@ -8,7 +8,6 @@
  "field_order": [
   "applicant_details_tab",
   "section_break_r7kw",
-  "status",
   "amended_from",
   "first_name",
   "last_name",
@@ -29,7 +28,6 @@
   "non_farm",
   "section_break_wwjz",
   "business_category",
-  "business_description",
   "select_support_you_need_optional_section",
   "market_access",
   "marketing",
@@ -101,11 +99,6 @@
    "fieldname": "enterprise_details_tab",
    "fieldtype": "Tab Break",
    "label": "Enterprise Details"
-  },
-  {
-   "fieldname": "business_description",
-   "fieldtype": "Small Text",
-   "label": "Business Description"
   },
   {
    "depends_on": "eval: doc.farm_based != doc.non_farm",
@@ -216,17 +209,6 @@
    "fieldtype": "Int",
    "label": "Credit Score",
    "read_only": 1
-  },
-  {
-   "default": "Open",
-   "fieldname": "status",
-   "fieldtype": "Select",
-   "in_list_view": 1,
-   "in_preview": 1,
-   "in_standard_filter": 1,
-   "label": "Status",
-   "options": "Open\nApproved\nRejected",
-   "reqd": 1
   },
   {
    "fieldname": "first_name",

@@ -9,24 +9,15 @@ def get_base_url():
 	return base_url
 
 
-def get_headers():
-	headers = frappe.get_single("Rangde Settings").header
-	if not headers:
-		frappe.throw("RangDe headers not configured")
-	return headers
-
-
-def get_api_key():
-	api_key = frappe.conf.get("rangde_api_key")
-	if not api_key:
-		frappe.throw("RangDe API key not configured")
-	return api_key
+def rangde_headers():
+	return frappe.conf.get("rangde_headers", {})
 
 
 def initiate_session():
 	url = f"{get_base_url()}/login"
 
-	headers = {get_headers(): get_api_key()}
+	headers = rangde_headers()
+	print("Initiating RangDe session with headers:", headers)
 
 	response = requests.get(url, headers=headers, timeout=10)
 
@@ -57,15 +48,17 @@ def get_tokens():
 
 def _post(endpoint, data, retry=True):
 	auth_token, csrf_token = get_tokens()
+	print(f"Tokens received: {auth_token}, {csrf_token}")
 
 	headers = {
-		"x-rang-de": get_api_key(),
+		**rangde_headers(),
 		"x-auth-token": auth_token,
 		"x-csrf-token": csrf_token,
-		"Content-Type": "application/x-www-form-urlencoded",
 	}
+	print(f"Making POST request to {endpoint} with headers: {headers} and data: {data}")
 
 	url = f"{get_base_url()}/{endpoint}"
+	print(f"Full URL: {url}")
 
 	response = requests.post(url, headers=headers, data=data, timeout=10)
 

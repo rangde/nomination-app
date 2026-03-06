@@ -5,26 +5,20 @@
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
-  "base_url",
-  "header"
+  "base_url"
  ],
  "fields": [
   {
    "fieldname": "base_url",
    "fieldtype": "Data",
    "label": "Base URL"
-  },
-  {
-   "fieldname": "header",
-   "fieldtype": "Long Text",
-   "label": "Header"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "issingle": 1,
  "links": [],
- "modified": "2026-03-05 23:28:09.022207",
+ "modified": "2026-03-06 16:44:44.686426",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Rangde Settings",
