@@ -95,3 +95,10 @@ def credit_check(data):
 	if data:
 		return _post("borrower-nomination/credit-check", data)
 	return None
+
+
+def get_metrics():
+	headers = rangde_headers()
+	url = f"{get_base_url()}/borrower-nomination/metrics"
+	response = requests.get(url, headers=headers, timeout=10)
+	return response.json()
