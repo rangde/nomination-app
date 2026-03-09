@@ -1,0 +1,41 @@
+{
+ "app": "nomination",
+ "creation": "2026-02-25 14:19:44.270111",
+ "docstatus": 0,
+ "doctype": "Workspace Sidebar",
+ "header_icon": "group",
+ "idx": 0,
+ "items": [
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Nomination Form",
+   "link_to": "Nomination Form",
+   "link_type": "DocType",
+   "show_arrow": 0,
+   "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "layout-dashboard",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Pragati CLF",
+   "link_to": "pragati-clf",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
+  }
+ ],
+ "modified": "2026-03-07 16:20:35.776420",
+ "modified_by": "Administrator",
+ "module": "Nomination",
+ "name": "Nomination",
+ "owner": "Administrator",
+ "standard": 1,
+ "title": "Nomination"
+}

@@ -1,0 +1,309 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "SHG-.###",
+ "creation": "2026-02-04 16:53:54.237310",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "applicant_details_tab",
+  "section_break_r7kw",
+  "amended_from",
+  "first_name",
+  "last_name",
+  "pincode",
+  "district",
+  "townvillage",
+  "permanent_address",
+  "aadhaar_number",
+  "pan_number",
+  "date_of_birth",
+  "vo_approval_by",
+  "vo_approved_on",
+  "clf_approval_by",
+  "clf_approved_on",
+  "enterprise_details_tab",
+  "sector_type_section",
+  "farm_based",
+  "non_farm",
+  "section_break_wwjz",
+  "business_category",
+  "select_support_you_need_optional_section",
+  "market_access",
+  "marketing",
+  "demand_assessment",
+  "none",
+  "section_break_wgjv",
+  "final_review",
+  "credit_details_tab",
+  "mobile_number",
+  "credit_bureau_check",
+  "credit_score",
+  "set_credit_limit"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_r7kw",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Nomination Form",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "permanent_address",
+   "fieldtype": "Small Text",
+   "label": "Permanent Address",
+   "placeholder": "Street, Village, Block..."
+  },
+  {
+   "fieldname": "aadhaar_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Aadhaar Number",
+   "placeholder": "12-digit number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "pan_number",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "PAN Number",
+   "placeholder": "ABCDE1234F",
+   "reqd": 1
+  },
+  {
+   "fieldname": "credit_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Credit Details"
+  },
+  {
+   "fieldname": "applicant_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Applicant Details"
+  },
+  {
+   "default": "Credit score and risk flags will be fetched automatically after submission for review by checkers.",
+   "fieldname": "credit_bureau_check",
+   "fieldtype": "Small Text",
+   "label": "CREDIT BUREAU CHECK",
+   "read_only": 1
+  },
+  {
+   "fieldname": "enterprise_details_tab",
+   "fieldtype": "Tab Break",
+   "label": "Enterprise Details"
+  },
+  {
+   "depends_on": "eval: doc.farm_based != doc.non_farm",
+   "fieldname": "business_category",
+   "fieldtype": "Select",
+   "label": "Business Category"
+  },
+  {
+   "fieldname": "select_support_you_need_optional_section",
+   "fieldtype": "Section Break",
+   "label": "Select support you need (Optional)"
+  },
+  {
+   "default": "0",
+   "fieldname": "market_access",
+   "fieldtype": "Check",
+   "label": "Market Access"
+  },
+  {
+   "default": "0",
+   "fieldname": "marketing",
+   "fieldtype": "Check",
+   "label": "Marketing"
+  },
+  {
+   "default": "0",
+   "fieldname": "demand_assessment",
+   "fieldtype": "Check",
+   "label": "Demand Assessment"
+  },
+  {
+   "default": "0",
+   "fieldname": "none",
+   "fieldtype": "Check",
+   "label": "None"
+  },
+  {
+   "fieldname": "section_break_wgjv",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "Please review all information carefully. Once submitted, you cannot edit this application. It will be forwarded to VO for approval",
+   "fieldname": "final_review",
+   "fieldtype": "Small Text",
+   "label": "Final Review",
+   "read_only": 1
+  },
+  {
+   "fieldname": "pincode",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Pincode",
+   "reqd": 1
+  },
+  {
+   "fieldname": "district",
+   "fieldtype": "Data",
+   "label": "District"
+  },
+  {
+   "fieldname": "townvillage",
+   "fieldtype": "Data",
+   "label": "Town/Village"
+  },
+  {
+   "fieldname": "date_of_birth",
+   "fieldtype": "Date",
+   "label": "Date of Birth",
+   "reqd": 1
+  },
+  {
+   "fieldname": "sector_type_section",
+   "fieldtype": "Section Break",
+   "label": "Sector Type"
+  },
+  {
+   "default": "0",
+   "fieldname": "farm_based",
+   "fieldtype": "Check",
+   "label": "Farm based"
+  },
+  {
+   "default": "0",
+   "fieldname": "non_farm",
+   "fieldtype": "Check",
+   "label": "Non farm"
+  },
+  {
+   "fieldname": "section_break_wwjz",
+   "fieldtype": "Section Break"
+  },
+  {
+   "default": "+91-",
+   "fieldname": "mobile_number",
+   "fieldtype": "Phone",
+   "label": "Mobile Number",
+   "reqd": 1
+  },
+  {
+   "fieldname": "set_credit_limit",
+   "fieldtype": "Select",
+   "label": "Set Credit Limit",
+   "options": "50000\n100000\n150000\n200000\n250000\n300000",
+   "reqd": 1
+  },
+  {
+   "fieldname": "credit_score",
+   "fieldtype": "Int",
+   "label": "Credit Score",
+   "read_only": 1
+  },
+  {
+   "fieldname": "first_name",
+   "fieldtype": "Data",
+   "label": "First Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "last_name",
+   "fieldtype": "Data",
+   "label": "Last Name",
+   "reqd": 1
+  },
+  {
+   "fieldname": "vo_approval_by",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "VO Approval by"
+  },
+  {
+   "fieldname": "vo_approved_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "VO Approved on"
+  },
+  {
+   "fieldname": "clf_approval_by",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "CLF Approval by"
+  },
+  {
+   "fieldname": "clf_approved_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "CLF Approved on"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2026-02-26 19:51:13.026146",
+ "modified_by": "Administrator",
+ "module": "Nomination",
+ "name": "Nomination Form",
+ "naming_rule": "Expression",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  },
+  {
+   "create": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "SHG",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "VO",
+   "write": 1
+  },
+  {
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "CLF",
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
