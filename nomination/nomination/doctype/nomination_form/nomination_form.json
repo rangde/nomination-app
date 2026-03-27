@@ -39,7 +39,10 @@
   "mobile_number",
   "credit_bureau_check",
   "credit_score",
-  "set_credit_limit"
+  "set_credit_limit",
+  "shg_proposed",
+  "vo_proposed",
+  "clf_proposed"
  ],
  "fields": [
   {
@@ -245,13 +248,31 @@
    "fieldtype": "Datetime",
    "hidden": 1,
    "label": "CLF Approved on"
+  },
+  {
+   "fieldname": "shg_proposed",
+   "fieldtype": "Int",
+   "label": "SHG Proposed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vo_proposed",
+   "fieldtype": "Int",
+   "label": "VO Proposed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "clf_proposed",
+   "fieldtype": "Int",
+   "label": "CLF Proposed",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-26 19:51:13.026146",
+ "modified": "2026-03-27 13:27:58.254273",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination Form",
