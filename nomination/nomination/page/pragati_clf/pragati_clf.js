@@ -31,11 +31,17 @@ function load_dashboard() {
 	frappe.call({
 		method: "nomination.api.dashboard.get_dashboard_metrics",
 		callback: function (r) {
+			if (!r.message) {
+				return;
+			}
 			let data = r.message;
 
 			render_nomination(data.nomination);
 			render_training(data.training);
 			render_loan(data.loan);
+		},
+		error: function () {
+			frappe.msgprint(__("Unable to load dashboard metrics."));
 		},
 	});
 }
