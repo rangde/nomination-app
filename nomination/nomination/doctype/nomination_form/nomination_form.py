@@ -3,11 +3,23 @@
 
 import frappe
 from frappe.model.document import Document
-
+from frappe.utils import cint
 from nomination.api.validation import validate_aadhaar_number, validate_date_of_birth, validate_pan_number
 
 
 class NominationForm(Document):
+	
+	def validate(self):
+		self.set_proposed_amount()
+
+	def set_proposed_amount(self):
+		role_field_map = frappe._dict({
+			"SHG Proposed": "shg_proposed",
+			"VO Approved":  "vo_proposed",
+			"CLF Approved": "clf_proposed",
+		})
+		if role_field_map.get(self.workflow_state):
+			self.set(role_field_map[self.workflow_state], cint(self.set_credit_limit))
 	def before_insert(self):
 		if self.aadhaar_number:
 			validate_aadhaar_number(self.aadhaar_number)
