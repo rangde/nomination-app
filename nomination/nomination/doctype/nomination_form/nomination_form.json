@@ -22,6 +22,8 @@
   "vo_approved_on",
   "clf_approval_by",
   "clf_approved_on",
+  "shg_approval_by",
+  "shg_approved_on",
   "enterprise_details_tab",
   "sector_type_section",
   "farm_based",
@@ -39,7 +41,10 @@
   "mobile_number",
   "credit_bureau_check",
   "credit_score",
-  "set_credit_limit"
+  "set_credit_limit",
+  "shg_proposed",
+  "vo_proposed",
+  "clf_proposed"
  ],
  "fields": [
   {
@@ -245,13 +250,43 @@
    "fieldtype": "Datetime",
    "hidden": 1,
    "label": "CLF Approved on"
+  },
+  {
+   "fieldname": "shg_proposed",
+   "fieldtype": "Int",
+   "label": "SHG Proposed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "vo_proposed",
+   "fieldtype": "Int",
+   "label": "VO Proposed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "clf_proposed",
+   "fieldtype": "Int",
+   "label": "CLF Proposed",
+   "read_only": 1
+  },
+  {
+   "fieldname": "shg_approval_by",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "SHG Approval by"
+  },
+  {
+   "fieldname": "shg_approved_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "SHG Approved on"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-02-26 19:51:13.026146",
+ "modified": "2026-03-27 16:19:58.476996",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination Form",
