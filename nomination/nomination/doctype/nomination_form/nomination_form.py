@@ -11,6 +11,7 @@ class NominationForm(Document):
 	
 	def validate(self):
 		self.set_proposed_amount()
+		self.set_approval_log()
 
 	def set_proposed_amount(self):
 		role_field_map = frappe._dict({
@@ -30,9 +31,6 @@ class NominationForm(Document):
 		if self.date_of_birth:
 			validate_date_of_birth(self.date_of_birth)
 
-	def before_save(self):
-		self.set_approval_log()
-
 	def set_approval_log(self):
 		current_user = frappe.session.user
 		current_time = frappe.utils.now()
@@ -42,7 +40,6 @@ class NominationForm(Document):
 			"VO Approved":  "vo",
 			"CLF Approved": "clf",
 		})
-
 		if approved_by.get(self.workflow_state):
 			self.set(f"{approved_by.get(self.workflow_state)}_approval_by", get_fullname(current_user))
 			self.set(f"{approved_by.get(self.workflow_state)}_approved_on", current_time)

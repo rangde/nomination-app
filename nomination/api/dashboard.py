@@ -1,4 +1,5 @@
 import frappe
+from frappe.utils import get_fullname
 
 from nomination.api.rangde_service import get_metrics
 
@@ -55,61 +56,60 @@ def _nomination_owner_scope_for_session() -> set[str] | None:
 	return _get_subordinate_users(user)
 
 
+def get_nominations(
+	workflow_state: str | list[str] | tuple[str, ...] | None = None,
+	approval_field: str | None = None,
+	approver_name: str | None = None,
+):
+	nomination_form = frappe.qb.DocType("Nomination Form")
+	query = frappe.qb.from_(nomination_form).select(nomination_form.star)
+
+	if workflow_state:
+		if isinstance(workflow_state, (list, tuple)):
+			query = query.where(nomination_form.workflow_state.isin(workflow_state))
+		else:
+			query = query.where(nomination_form.workflow_state == workflow_state)
+
+	if approval_field and approver_name:
+		query = query.where(nomination_form[approval_field] == approver_name)
+
+	return query.orderby(nomination_form.creation, order=frappe.qb.desc).run(as_dict=True)
+
+
 @frappe.whitelist()
 def get_nomination_list():
 	if frappe.session.user == "Guest":
 		return {"status": 0, "msg": "Not logged in"}
 
 	user = frappe.session.user
+	full_name = get_fullname(user)
 	roles = frappe.get_roles(user)
 
 	response = {}
 
 	if "SHG" in roles:
 		response = {
-			"submitted": frappe.get_list(
-				"Nomination Form",
-				filters={"owner": user, "workflow_state": "SHG Proposed"},
-				fields=["*"],
-				order_by="creation desc",
+			"submitted": get_nominations(
+				workflow_state=["SHG Proposed", "VO Approved"],
+				approval_field="shg_approval_by",
+				approver_name=full_name,
 			),
-			"ready_for_training": frappe.get_list(
-				"Nomination Form",
-				filters={"owner": user, "workflow_state": "CLF Approved"},
-				fields=["*"],
-				order_by="creation desc",
-			),
+			"ready_for_training": get_nominations(workflow_state="CLF Approved", approval_field="shg_approval_by", approver_name=full_name),
 		}
 
 	elif "VO" in roles:
 		response = {
-			"submitted": frappe.get_list(
-				"Nomination Form",
-				filters={"workflow_state": "SHG Proposed"},
-				fields=["*"],
-				order_by="creation desc",
-			),
-			"ready_for_training": frappe.get_list(
-				"Nomination Form",
-				filters={"workflow_state": "VO Approved"},
-				fields=["*"],
-				order_by="creation desc",
+			"submitted": get_nominations(workflow_state="SHG Proposed"),
+			"ready_for_training": get_nominations(
+				approval_field="vo_approval_by", approver_name=full_name
 			),
 		}
 
 	elif "CLF" in roles:
 		response = {
-			"submitted": frappe.get_list(
-				"Nomination Form",
-				filters={"workflow_state": "VO Approved"},
-				fields=["*"],
-				order_by="creation desc",
-			),
-			"ready_for_training": frappe.get_list(
-				"Nomination Form",
-				filters={"workflow_state": "CLF Approved"},
-				fields=["*"],
-				order_by="creation desc",
+			"submitted": get_nominations(workflow_state="VO Approved"),
+			"ready_for_training": get_nominations(
+				approval_field="clf_approval_by", approver_name=full_name
 			),
 		}
 
