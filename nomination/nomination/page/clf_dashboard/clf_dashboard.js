@@ -1,7 +1,7 @@
-frappe.pages["pragati-clf"].on_page_load = function (wrapper) {
+frappe.pages["clf-dashboard"].on_page_load = function (wrapper) {
 	let page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: "Pragati CLF Dashboard",
+		title: "CLF Dashboard",
 		single_column: true,
 	});
 

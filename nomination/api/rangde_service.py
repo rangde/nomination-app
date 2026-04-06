@@ -17,7 +17,6 @@ def initiate_session():
 	url = f"{get_base_url()}/login"
 
 	headers = rangde_headers()
-	print("Initiating RangDe session with headers:", headers)
 
 	response = requests.get(url, headers=headers, timeout=10)
 
@@ -48,17 +47,14 @@ def get_tokens():
 
 def _post(endpoint, data, retry=True):
 	auth_token, csrf_token = get_tokens()
-	print(f"Tokens received: {auth_token}, {csrf_token}")
 
 	headers = {
 		**rangde_headers(),
 		"x-auth-token": auth_token,
 		"x-csrf-token": csrf_token,
 	}
-	print(f"Making POST request to {endpoint} with headers: {headers} and data: {data}")
 
 	url = f"{get_base_url()}/{endpoint}"
-	print(f"Full URL: {url}")
 
 	response = requests.post(url, headers=headers, data=data, timeout=10)
 

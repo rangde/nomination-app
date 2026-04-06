@@ -252,24 +252,6 @@
    "label": "CLF Approved on"
   },
   {
-   "fieldname": "shg_proposed",
-   "fieldtype": "Int",
-   "label": "SHG Proposed",
-   "read_only": 1
-  },
-  {
-   "fieldname": "vo_proposed",
-   "fieldtype": "Int",
-   "label": "VO Proposed",
-   "read_only": 1
-  },
-  {
-   "fieldname": "clf_proposed",
-   "fieldtype": "Int",
-   "label": "CLF Proposed",
-   "read_only": 1
-  },
-  {
    "fieldname": "shg_approval_by",
    "fieldtype": "Data",
    "hidden": 1,
@@ -280,13 +262,28 @@
    "fieldtype": "Datetime",
    "hidden": 1,
    "label": "SHG Approved on"
+  },
+  {
+   "fieldname": "shg_proposed",
+   "fieldtype": "Currency",
+   "label": "SHG Proposed"
+  },
+  {
+   "fieldname": "vo_proposed",
+   "fieldtype": "Currency",
+   "label": "VO Proposed"
+  },
+  {
+   "fieldname": "clf_proposed",
+   "fieldtype": "Currency",
+   "label": "CLF Proposed"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-03-27 16:19:58.476996",
+ "modified": "2026-04-06 11:02:33.117517",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination Form",
