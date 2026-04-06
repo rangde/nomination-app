@@ -1,19 +1,19 @@
 {
  "content": null,
- "creation": "2026-03-07 14:35:34.358674",
+ "creation": "2026-04-06 11:51:16.456855",
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2026-03-07 15:18:25.129706",
+ "modified": "2026-04-06 11:53:48.782167",
  "modified_by": "Administrator",
  "module": "Nomination",
- "name": "pragati-clf",
+ "name": "clf-dashboard",
  "owner": "Administrator",
- "page_name": "pragati-clf",
+ "page_name": "clf-dashboard",
  "roles": [],
  "script": null,
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "Pragati CLF Dasboard"
+ "title": "CLF Dashboard"
 }

@@ -91,6 +91,7 @@ fixtures = [
 		"dt": "Workflow State",
 		"filters": [["workflow_state_name", "in", ["Draft", "SHG Proposed", "VO Approved", "CLF Approved"]]],
 	},
+	{"dt": "Property Setter"},
 ]
 # Installation
 # ------------

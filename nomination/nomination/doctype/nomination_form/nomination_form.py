@@ -4,21 +4,23 @@
 import frappe
 from frappe.model.document import Document
 from frappe.utils import cint, get_fullname
+
 from nomination.api.validation import validate_aadhaar_number, validate_date_of_birth, validate_pan_number
 
 
 class NominationForm(Document):
-	
 	def validate(self):
 		self.set_proposed_amount()
 		self.set_approval_log()
 
 	def set_proposed_amount(self):
-		role_field_map = frappe._dict({
-			"SHG Proposed": "shg_proposed",
-			"VO Approved":  "vo_proposed",
-			"CLF Approved": "clf_proposed",
-		})
+		role_field_map = frappe._dict(
+			{
+				"SHG Proposed": "shg_proposed",
+				"VO Approved": "vo_proposed",
+				"CLF Approved": "clf_proposed",
+			}
+		)
 		if role_field_map.get(self.workflow_state):
 			self.set(role_field_map[self.workflow_state], cint(self.set_credit_limit))
 
@@ -35,11 +37,13 @@ class NominationForm(Document):
 		current_user = frappe.session.user
 		current_time = frappe.utils.now()
 
-		approved_by = frappe._dict({
-			"SHG Proposed": "shg",
-			"VO Approved":  "vo",
-			"CLF Approved": "clf",
-		})
+		approved_by = frappe._dict(
+			{
+				"SHG Proposed": "shg",
+				"VO Approved": "vo",
+				"CLF Approved": "clf",
+			}
+		)
 		if approved_by.get(self.workflow_state):
 			self.set(f"{approved_by.get(self.workflow_state)}_approval_by", get_fullname(current_user))
 			self.set(f"{approved_by.get(self.workflow_state)}_approved_on", current_time)
