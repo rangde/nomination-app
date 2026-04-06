@@ -75,8 +75,8 @@ def approve_form(name, credit_limit):
 		nomi_doc = frappe.get_doc("Nomination Form", name)
 		new_credit_limit = flt(credit_limit)
 		if nomi_doc.set_credit_limit != new_credit_limit:
-			nomi_doc.set("set_credit_limit", credit_limit)
-			nomi_doc.save(ignore_permissions=True)
+			frappe.db.set_value(nomi_doc.doctype, nomi_doc.name, "set_credit_limit", credit_limit)
+			nomi_doc.reload()
 
 		current_state = nomi_doc.workflow_state
 
