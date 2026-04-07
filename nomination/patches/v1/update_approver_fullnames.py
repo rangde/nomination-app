@@ -10,4 +10,9 @@ def execute():
 		for row in approvers:
 			fieldname = f"{row}_approval_by"
 			if nomination.get(fieldname):
-				frappe.db.set_value("Nomination Form", nomination_form, fieldname, frappe.utils.get_fullname(nomination.get(fieldname)))
+				frappe.db.set_value(
+					"Nomination Form",
+					nomination_form,
+					fieldname,
+					frappe.utils.get_fullname(nomination.get(fieldname)),
+				)
