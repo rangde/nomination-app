@@ -6,3 +6,4 @@
 # Patches added in this section will be executed after doctypes are migrated
 nomination.patches.v1.update_approver_fullnames
 nomination.patches.v1.disable_roles
+nomination.patches.v1.reports_to_custom_field

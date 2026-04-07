@@ -2,7 +2,7 @@ import frappe
 from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
 
-def after_install():
+def execute():
 	custom_fields = {
 		"User": [
 			{

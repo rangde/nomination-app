@@ -1,0 +1,19 @@
+{
+ "content": null,
+ "creation": "2026-04-07 20:46:32.399208",
+ "docstatus": 0,
+ "doctype": "Page",
+ "idx": 0,
+ "modified": "2026-04-07 20:47:07.917732",
+ "modified_by": "Administrator",
+ "module": "Nomination",
+ "name": "user-hierarchy",
+ "owner": "Administrator",
+ "page_name": "user-hierarchy",
+ "roles": [],
+ "script": null,
+ "standard": "Yes",
+ "style": null,
+ "system_page": 0,
+ "title": "Approvers Hierarchy"
+}

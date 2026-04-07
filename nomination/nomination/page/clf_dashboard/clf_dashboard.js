@@ -84,12 +84,10 @@ function add_dashboard_style() {
 			margin-bottom: 2.5rem;
 		}
 
-		.metric-card {
-			background: var(--card-bg);
-			border: 0.5px solid var(--border-color);
-			border-radius: 8px;
-			padding: 1rem 1.25rem;
-			border-left-width: 3px;
+		.metric-card[href]:hover {
+			box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+			border-color: var(--primary);
+			cursor: pointer;
 		}
 
 		.metric-card.blue  { border-left-color: #378ADD; }
@@ -112,21 +110,52 @@ function add_dashboard_style() {
 	`);
 }
 
-function card(title, value, color) {
+function card(title, value, color, href) {
+	const tag = href ? "a" : "div";
+	const attrs = href ? `href="${href}" style="text-decoration:none;display:block;"` : "";
 	return `
-		<div class="metric-card ${color || ""}">
-			<div class="metric-title">${title}</div>
-			<div class="metric-value">${value || 0}</div>
-		</div>`;
+        <${tag} class="metric-card ${color || ""}" ${attrs}>
+            <div class="metric-title">${title}</div>
+            <div class="metric-value">${value || 0}</div>
+        </${tag}>`;
+}
+
+function nomination_list_url(filters) {
+	return `/app/nomination-form?filters=${encodeURIComponent(JSON.stringify(filters))}`;
 }
 
 function render_nomination(data) {
 	let html = "";
-	html += card("SHG Approved", data.shg_approved, "blue");
-	html += card("VO Pending", data.vo_pending, "blue");
-	html += card("VO Approved", data.vo_approved, "blue");
-	html += card("CLF Pending", data.clf_pending, "blue");
-	html += card("CLF Approved", data.clf_approved, "blue");
+	html += card(
+		"SHG Approved",
+		data.shg_approved,
+		"blue",
+		nomination_list_url([["Nomination Form", "workflow_state", "=", "SHG Proposed"]])
+	);
+	html += card(
+		"VO Pending",
+		data.vo_pending,
+		"blue",
+		nomination_list_url([["Nomination Form", "workflow_state", "=", "SHG Proposed"]])
+	);
+	html += card(
+		"VO Approved",
+		data.vo_approved,
+		"blue",
+		nomination_list_url([["Nomination Form", "workflow_state", "=", "VO Approved"]])
+	);
+	html += card(
+		"CLF Pending",
+		data.clf_pending,
+		"blue",
+		nomination_list_url([["Nomination Form", "workflow_state", "=", "VO Approved"]])
+	);
+	html += card(
+		"CLF Approved",
+		data.clf_approved,
+		"blue",
+		nomination_list_url([["Nomination Form", "workflow_state", "=", "CLF Approved"]])
+	);
 	$("#nomination_flow").html(html);
 }
 
