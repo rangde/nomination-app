@@ -11,9 +11,12 @@ from .validation import validate_aadhaar_number, validate_date_of_birth, validat
 def validate_aadhaar(aadhaar_number):
 	try:
 		validate_aadhaar_number(aadhaar_number)
+		frappe.session.data["aadhaar_validated"] = aadhaar_number
 		return {"status": 1, "msg": "Valid Aadhaar"}
-	except Exception as e:
-		return {"status": 0, "msg": str(e)}
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Aadhaar Validation Error")
+		frappe.session.data["aadhaar_validated"] = None
+		return {"status": 0, "msg": "Invalid Aadhaar Number"}
 
 
 @frappe.whitelist()
@@ -21,8 +24,9 @@ def validate_pan(pan_number):
 	try:
 		validate_pan_number(pan_number)
 		return {"status": 1, "msg": "Valid PAN"}
-	except Exception as e:
-		return {"status": 0, "msg": str(e)}
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "PAN Validation Error")
+		return {"status": 0, "msg": "Invalid PAN Number"}
 
 
 @frappe.whitelist()
@@ -30,8 +34,9 @@ def validate_dob(dob):
 	try:
 		validate_date_of_birth(dob)
 		return {"status": 1, "msg": "Valid DOB"}
-	except Exception as e:
-		return {"status": 0, "msg": str(e)}
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "DOB Validation Error")
+		return {"status": 0, "msg": "Invalid Date of Birth"}
 
 
 def mask_aadhaar(aadhaar):
