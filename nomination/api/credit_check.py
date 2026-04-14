@@ -47,5 +47,6 @@ def credit_score(**kwargs):
 
 		return {"status": 1, "msg": score}
 
-	except Exception as e:
-		return {"status": 0, "msg": str(e)}
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "Credit Check Error")
+		return {"status": 0, "msg": "Credit check failed, please try again later"}

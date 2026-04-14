@@ -29,9 +29,21 @@
    "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
+  },
+  {
+   "child": 0,
+   "collapsible": 1,
+   "icon": "list-tree",
+   "indent": 0,
+   "keep_closed": 0,
+   "label": "Approver Hierarchy",
+   "link_to": "user-hierarchy",
+   "link_type": "Page",
+   "show_arrow": 0,
+   "type": "Link"
   }
  ],
- "modified": "2026-04-06 11:53:18.603578",
+ "modified": "2026-04-07 23:08:08.259365",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination",
