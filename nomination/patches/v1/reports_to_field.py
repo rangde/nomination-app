@@ -12,7 +12,7 @@ def execute():
 				"options": "User",
 				"insert_after": "username",
 				"translatable": 0,
-			},
+			}
 		],
 	}
 

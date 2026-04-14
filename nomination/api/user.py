@@ -36,14 +36,18 @@ def get_roles():
 
 @frappe.whitelist()
 def get_user_hierarchy():
-	rows = frappe.get_all("User", fields=["name", "reports_to"], filters={"enabled": 1})
+	rows = frappe.get_all(
+		"User",
+		fields=["name", "full_name", "reports_to"],
+		filters={"enabled": 1},
+	)
 
 	children_map: dict[str, list[str]] = {}
 	child_set: set[str] = set()
 	full_names: dict[str, str] = {}
 
 	for r in rows:
-		full_names[r.name] = frappe.get_value("User", r.name, "full_name") or r.name
+		full_names[r.name] = r.full_name or r.name
 		if r.reports_to:
 			children_map.setdefault(r.reports_to, []).append(r.name)
 			child_set.add(r.name)
@@ -53,20 +57,12 @@ def get_user_hierarchy():
 	def build_node(user, visited=None):
 		if visited is None:
 			visited = set()
-
 		if user in visited:
-			return {
-				"user": user,
-				"full_name": full_names.get(user, user) + "  (cycle)",
-				"children": [],
-			}
-
-		visited = visited | {user}
-
+			return {"user": user, "full_name": full_names.get(user, user) + " (cycle)", "children": []}
 		return {
 			"user": user,
 			"full_name": full_names.get(user, user),
-			"children": [build_node(c, visited) for c in children_map.get(user, [])],
+			"children": [build_node(c, visited | {user}) for c in children_map.get(user, [])],
 		}
 
 	return [build_node(r) for r in roots]

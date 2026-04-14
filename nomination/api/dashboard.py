@@ -11,26 +11,25 @@ def _user_sees_all_nominations(user: str) -> bool:
 
 
 def _get_subordinate_users(manager: str) -> set[str]:
-	"""Users who report to `manager`, directly or transitively (User Reporting)."""
+	rows = frappe.get_all(
+		"User",
+		fields=["name", "reports_to"],
+		filters={"enabled": 1},
+	)
+
+	children_map: dict[str, list[str]] = {}
+	for r in rows:
+		if r.reports_to:
+			children_map.setdefault(r.reports_to, []).append(r.name)
+
 	subordinates: set[str] = set()
-	queue: list[str] = [manager]
-	expanded: set[str] = set()
-
+	queue = [manager]
 	while queue:
-		m = queue.pop(0)
-		if m in expanded:
-			continue
-		expanded.add(m)
-
-		direct = frappe.get_all(
-			"User Reporting",
-			filters={"reports_to": m},
-			pluck="user",
-		)
-		for u in direct:
-			if u not in subordinates:
-				subordinates.add(u)
-				queue.append(u)
+		current = queue.pop(0)
+		for child in children_map.get(current, []):
+			if child not in subordinates:
+				subordinates.add(child)
+				queue.append(child)
 
 	return subordinates
 
@@ -94,23 +93,21 @@ def get_nomination_list():
 				approval_field="shg_approval_by",
 				approver_name=full_name,
 			),
-			"ready_for_training": get_nominations(workflow_state="CLF Approved", approval_field="shg_approval_by", approver_name=full_name),
+			"ready_for_training": get_nominations(
+				workflow_state="CLF Approved", approval_field="shg_approval_by", approver_name=full_name
+			),
 		}
 
 	elif "VO" in roles:
 		response = {
 			"submitted": get_nominations(workflow_state="SHG Proposed"),
-			"ready_for_training": get_nominations(
-				approval_field="vo_approval_by", approver_name=full_name
-			),
+			"ready_for_training": get_nominations(approval_field="vo_approval_by", approver_name=full_name),
 		}
 
 	elif "CLF" in roles:
 		response = {
 			"submitted": get_nominations(workflow_state="VO Approved"),
-			"ready_for_training": get_nominations(
-				approval_field="clf_approval_by", approver_name=full_name
-			),
+			"ready_for_training": get_nominations(approval_field="clf_approval_by", approver_name=full_name),
 		}
 
 	return {"status": 1, "msg": [response]}
