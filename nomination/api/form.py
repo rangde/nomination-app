@@ -77,37 +77,48 @@ def approve_form(name, credit_limit):
 		return {"status": 0, "msg": "Document not found"}
 
 	try:
-		nomi_doc = frappe.get_doc("Nomination Form", name)
-		new_credit_limit = flt(credit_limit)
-		if nomi_doc.set_credit_limit != new_credit_limit:
-			frappe.db.set_value(nomi_doc.doctype, nomi_doc.name, "set_credit_limit", credit_limit)
-			nomi_doc.reload()
+		user_roles = frappe.get_roles(frappe.session.user)
+		if "SHG" in user_roles and "CLF" not in user_roles and "System Manager" not in user_roles:
+			frappe.throw("Not permitted to approve nominations", frappe.PermissionError)
 
+		nomi_doc = frappe.get_doc("Nomination Form", name)
 		current_state = nomi_doc.workflow_state
 
 		if current_state == "Draft":
 			action = "Send to VO"
-
 		elif current_state == "SHG Proposed":
 			action = "Send to CLF"
-
 		elif current_state == "VO Approved":
 			action = "Approve"
-
 		else:
-			return {"status": 0, "msg": f"No workflow action available from state {current_state}"}
+			return {"status": 0, "msg": "Not a valid Workflow Action"}
+
+		new_credit_limit = flt(credit_limit)
+		if nomi_doc.set_credit_limit != new_credit_limit:
+			frappe.db.set_value(nomi_doc.doctype, nomi_doc.name, "set_credit_limit", credit_limit)
+			frappe.log_error(
+				f"Credit limit changed to {credit_limit} for {name} "
+				f"by {frappe.session.user} from state {current_state}",
+				"Credit Limit Audit",
+			)
+			nomi_doc.reload()
 
 		apply_workflow(nomi_doc, action)
 
 		return {"status": 1, "msg": f"{name} Document has been moved to next workflow state"}
 
-	except Exception as e:
+	except frappe.PermissionError:
+		raise
+	except Exception:
 		frappe.log_error(frappe.get_traceback(), "Approve Form Error")
-		return {"status": 0, "msg": str(e)}
+		return {"status": 0, "msg": "An error occurred while approving the form. Please try again later."}
 
 
 @frappe.whitelist()
 def submit_nomination(payload):
+	if frappe.session.user == "Guest":
+		return {"status": 0, "msg": "Not logged in"}
+
 	if isinstance(payload, str):
 		payload = json.loads(payload)
 

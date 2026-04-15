@@ -10,12 +10,18 @@ def credit_score(**kwargs):
 	if frappe.session.user == "Guest":
 		return {"status": 0, "msg": "Not logged in"}
 
+	mobile = (kwargs.get("mobile_number") or "").strip()
+
+	if not mobile:
+		return {"status": 0, "msg": "Mobile number required"}
+
+	verified = frappe.cache().get_value(f"otp_verified_{mobile}")
+	if not verified:
+		return {"status": 0, "msg": "OTP verification required"}
+
+	frappe.cache().delete_value(f"otp_verified_{mobile}")
+
 	try:
-		mobile = (kwargs.get("mobile_number") or "").strip()
-
-		if not mobile:
-			return {"status": 0, "msg": "Mobile number required"}
-
 		if not mobile.startswith("91"):
 			mobile = f"91{mobile}"
 
@@ -23,6 +29,7 @@ def credit_score(**kwargs):
 
 		state_code = kwargs.get("state_code")
 		pincode = kwargs.get("pincode")
+		district = None
 
 		if not state_code:
 			if not pincode:
@@ -31,6 +38,7 @@ def credit_score(**kwargs):
 			state_code, district = get_state_code(pincode)
 			if not state_code:
 				return {"status": 0, "msg": "Unable to determine state code from pincode"}
+
 		payload = {
 			"firstName": kwargs.get("first_name"),
 			"lastName": kwargs.get("last_name"),
