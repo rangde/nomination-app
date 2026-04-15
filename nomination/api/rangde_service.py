@@ -63,7 +63,8 @@ def _post(endpoint, data, retry=True):
 		return _post(endpoint, data, retry=False)
 
 	if response.status_code != 200:
-		frappe.throw(f"RangDe API error: {response.text}")
+		frappe.log_error(f"RangDe API error: {response.text}", "RangDe Service Error")
+		frappe.throw("OTP service temporarily unavailable. Please try again.")
 
 	return response.json()
 
