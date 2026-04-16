@@ -71,3 +71,10 @@ def logout():
 			"status": 0,
 			"msg": "Logout failed",
 		}
+
+@frappe.whitelist(allow_guest=True)
+def get_csrf():
+	return {
+		"csrf_token": frappe.sessions.get_csrf_token(),
+		"user": frappe.session.user,
+	}
