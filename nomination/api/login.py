@@ -53,3 +53,28 @@ def verify_user_otp(mobile_number, otp):
 
 	frappe.local.login_manager.login_as(user)
 	return {"status": 1, "msg": "Logged in successfully", "user": user}
+
+@frappe.whitelist(allow_guest=True, methods=["POST"])
+def logout():
+	try:
+		frappe.local.login_manager.logout()
+		frappe.db.commit()
+
+		return {
+			"status": 1,
+			"msg": "Logged out successfully",
+		}
+	except Exception:
+		frappe.db.rollback()
+		frappe.log_error(frappe.get_traceback(), "Custom Logout Failed")
+		return {
+			"status": 0,
+			"msg": "Logout failed",
+		}
+
+@frappe.whitelist(allow_guest=True)
+def get_csrf():
+	return {
+		"csrf_token": frappe.sessions.get_csrf_token(),
+		"user": frappe.session.user,
+	}
