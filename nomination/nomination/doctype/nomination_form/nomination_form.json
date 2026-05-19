@@ -16,7 +16,7 @@
   "townvillage",
   "permanent_address",
   "aadhaar_number",
-  "voter_id_number",
+  "voter_id",
   "pan_number",
   "date_of_birth",
   "vo_approval_by",
@@ -272,23 +272,23 @@
    "label": "CLF Proposed"
   },
   {
-   "fieldname": "voter_id_number",
-   "fieldtype": "Data",
-   "in_list_view": 1,
-   "label": "Voter ID Number"
-  },
-  {
    "fieldname": "pan_number",
    "fieldtype": "Data",
    "label": "PAN Number",
    "placeholder": "ABCDE1234F"
+  },
+  {
+   "fieldname": "voter_id",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "Voter ID"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-05-19 10:28:01.946735",
+ "modified": "2026-05-19 12:14:27.090318",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination Form",
