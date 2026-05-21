@@ -12,7 +12,6 @@ def user_validation(mobile_number, credit_check=False):
 			return {"status": 0, "msg": "Mobile number not registered"}
 
 		auth_token, csrf_token = get_tokens()
-
 		if not auth_token or not csrf_token:
 			initiate_session()
 
@@ -32,20 +31,27 @@ def send_otp_internal(mobile_number):
 
 
 @frappe.whitelist(allow_guest=True)
-def verify_user_otp(mobile_number, otp):
+def verify_user_otp(mobile_number, otp, credit_check=False):
 	result = verify_otp(mobile_number, otp)
 	messages = result.get("messages", [])
 
 	if not messages or messages[0].get("code") != "1":
+		frappe.log_error(
+			f"Invalid OTP verification for mobile number {mobile_number}. Response: {result}",
+			"RangDe OTP Verification Failed",
+		)
 		frappe.response.http_status_code = 417
 		frappe.cache().delete_value(f"otp_verified_{mobile_number}")
-		return {"status": 0, "msg": "OTP verification failed"}
+		return {"status": 0, "msg": "Incorrect OTP, please enter the correct OTP"}
 
 	mobile_number = str(mobile_number).strip()
 	if mobile_number.startswith("91"):
 		mobile_number = mobile_number[2:]
 
 	frappe.cache().set_value(f"otp_verified_{mobile_number}", "1", expires_in_sec=300)
+
+	if credit_check:
+		return {"status": 1, "msg": "OTP verified successfully"}
 
 	user = frappe.db.get_value("User", {"mobile_no": mobile_number}, "name")
 	if not user:
@@ -54,23 +60,18 @@ def verify_user_otp(mobile_number, otp):
 	frappe.local.login_manager.login_as(user)
 	return {"status": 1, "msg": "Logged in successfully", "user": user}
 
+
 @frappe.whitelist(allow_guest=True, methods=["POST"])
 def logout():
 	try:
 		frappe.local.login_manager.logout()
 		frappe.db.commit()
-
-		return {
-			"status": 1,
-			"msg": "Logged out successfully",
-		}
+		return {"status": 1, "msg": "Logged out successfully"}
 	except Exception:
 		frappe.db.rollback()
 		frappe.log_error(frappe.get_traceback(), "Custom Logout Failed")
-		return {
-			"status": 0,
-			"msg": "Logout failed",
-		}
+		return {"status": 0, "msg": "Logout failed"}
+
 
 @frappe.whitelist(allow_guest=True)
 def get_csrf():
