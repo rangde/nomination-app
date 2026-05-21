@@ -1,7 +1,7 @@
 import frappe
 from frappe.utils import formatdate
 
-from nomination.api.rangde_service import credit_check, request_otp, verify_otp
+from nomination.api.rangde_service import credit_check
 from nomination.api.state_code import get_state_code
 
 
