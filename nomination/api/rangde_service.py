@@ -82,8 +82,10 @@ def request_otp(mobileNumber):
 def verify_otp(mobileNumber, otp):
 	mobileNumber = mobileNumber.strip()
 
-	if not mobileNumber.startswith("91"):
-		mobileNumber = f"91{mobileNumber}"
+	if len(mobileNumber) == 10:
+		mobileNumber = "91" + mobileNumber
+	elif len(mobileNumber) != 12:
+		return frappe.log_error(f"Invalid mobile number format: {mobileNumber}", "RangDe Service Error")
 
 	payload = {"mobileNumber": mobileNumber, "code": otp}
 
