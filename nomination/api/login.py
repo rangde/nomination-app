@@ -45,8 +45,11 @@ def verify_user_otp(mobile_number, otp, credit_check=False):
 		return {"status": 0, "msg": "Incorrect OTP, please enter the correct OTP"}
 
 	mobile_number = str(mobile_number).strip()
+
 	if len(mobile_number) == 12 and mobile_number.startswith("91"):
 		mobile_number = mobile_number[2:]
+	elif len(mobile_number) == 10:
+		pass
 	else:
 		frappe.log_error(
 			f"Unexpected mobile number format after verification: {mobile_number}",
