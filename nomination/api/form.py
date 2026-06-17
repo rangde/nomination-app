@@ -4,6 +4,7 @@ import frappe
 from frappe.model.workflow import apply_workflow
 from frappe.utils import cint, flt
 
+from .credit_report import generate_credit_report
 from .validation import validate_aadhaar_number, validate_date_of_birth, validate_pan_number
 
 
@@ -155,5 +156,9 @@ def submit_nomination(payload):
 
 	doc.insert(ignore_permissions=True)
 	apply_workflow(doc, "Send to VO")
+
+	report_base64 = payload.get("reportBase64")
+	if report_base64:
+		generate_credit_report(doc.name, report_base64)
 
 	return {"status": 1, "msg": doc.name}

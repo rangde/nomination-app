@@ -1,7 +1,7 @@
 import frappe
 from frappe.utils import formatdate
 
-from nomination.api.rangde_service import credit_check, request_otp, verify_otp
+from nomination.api.rangde_service import credit_check
 from nomination.api.state_code import get_state_code
 
 
@@ -22,6 +22,11 @@ def credit_score(**kwargs):
 	frappe.cache().delete_value(f"otp_verified_{mobile}")
 
 	try:
+		mobile = (kwargs.get("mobile_number") or "").strip()
+
+		if not mobile:
+			return {"status": 0, "msg": "Mobile number required"}
+
 		if not mobile.startswith("91"):
 			mobile = f"91{mobile}"
 
@@ -43,8 +48,8 @@ def credit_score(**kwargs):
 			"firstName": kwargs.get("first_name"),
 			"lastName": kwargs.get("last_name"),
 			"dob": dob,
-			"idType": "PAN",
-			"idNumber": kwargs.get("pan_number"),
+			"idType": kwargs.get("id_type"),
+			"idNumber": kwargs.get("id_number"),
 			"mobileNumber": mobile,
 			"district": district,
 			"stateCode": state_code,

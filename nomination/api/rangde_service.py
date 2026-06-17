@@ -47,6 +47,8 @@ def get_tokens():
 
 def _post(endpoint, data, retry=True):
 	auth_token, csrf_token = get_tokens()
+	payload = dict(data or {})
+	payload.setdefault("userName", get_user_name(payload.get("mobileNumber")))
 
 	headers = {
 		**rangde_headers(),
@@ -56,7 +58,7 @@ def _post(endpoint, data, retry=True):
 
 	url = f"{get_base_url()}/{endpoint}"
 
-	response = requests.post(url, headers=headers, data=data, timeout=10)
+	response = requests.post(url, headers=headers, data=payload, timeout=10)
 
 	if response.status_code == 401 and retry:
 		initiate_session()
@@ -64,7 +66,7 @@ def _post(endpoint, data, retry=True):
 
 	if response.status_code != 200:
 		frappe.log_error(f"RangDe API error: {response.text}", "RangDe Service Error")
-		frappe.throw("OTP service temporarily unavailable. Please try again.")
+		frappe.throw("RangDe API request failed")
 
 	return response.json()
 
@@ -80,8 +82,10 @@ def request_otp(mobileNumber):
 def verify_otp(mobileNumber, otp):
 	mobileNumber = mobileNumber.strip()
 
-	if not mobileNumber.startswith("91"):
-		mobileNumber = f"91{mobileNumber}"
+	if len(mobileNumber) == 10:
+		mobileNumber = "91" + mobileNumber
+	elif len(mobileNumber) != 12:
+		return frappe.log_error(f"Invalid mobile number format: {mobileNumber}", "RangDe Service Error")
 
 	payload = {"mobileNumber": mobileNumber, "code": otp}
 
@@ -99,3 +103,20 @@ def get_metrics():
 	url = f"{get_base_url()}/borrower-nomination/metrics"
 	response = requests.get(url, headers=headers, timeout=10)
 	return response.json()
+
+
+def get_user_name(fallback_identifier=None):
+	user = frappe.session.user
+	if user and user != "Guest":
+		user_info = frappe.get_value("User", user, ["full_name", "mobile_no"], as_dict=True)
+		if user_info:
+			return user_info.full_name or user_info.mobile_no or user
+		return user
+
+	if fallback_identifier:
+		return fallback_identifier
+
+	request_id = frappe.get_request_header("X-Frappe-Request-Id")
+	if request_id:
+		return request_id
+	return frappe.local.request_ip or "Guest"
