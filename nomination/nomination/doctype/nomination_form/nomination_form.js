@@ -2,9 +2,27 @@
 // For license information, please see license.txt
 
 frappe.ui.form.on("Nomination Form", {
-	// refresh(frm) {
+	refresh(frm) {
+		if (frm.is_new()) return;
 
-	// },
+		if (frappe.user.has_role("System Manager")) {
+			frm.add_custom_button(__("View Credit Report"), () => {
+				frappe.call({
+					method: "nomination.api.credit_report.get_credit_report",
+					args: { docname: frm.doc.name },
+					callback(r) {
+						if (r.message && r.message.file_url) {
+							window.open(r.message.file_url, "_blank");
+						} else {
+							frappe.msgprint(
+								__("No credit report is available for this nomination.")
+							);
+						}
+					},
+				});
+			});
+		}
+	},
 	farm_based(frm) {
 		if (frm.doc.farm_based) {
 			frm.set_value("non_farm", 0);
