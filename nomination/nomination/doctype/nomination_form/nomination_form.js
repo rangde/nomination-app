@@ -11,8 +11,32 @@ frappe.ui.form.on("Nomination Form", {
 					method: "nomination.api.credit_report.get_credit_report",
 					args: { docname: frm.doc.name },
 					callback(r) {
-						if (r.message && r.message.file_url) {
-							window.open(r.message.file_url, "_blank");
+						if (r.message && r.message.pdf_base64) {
+							const blob = b64_to_blob(r.message.pdf_base64, "application/pdf");
+							const url = URL.createObjectURL(blob);
+							window.open(url, "_blank");
+						} else {
+							frappe.msgprint(
+								__("No credit report is available for this nomination.")
+							);
+						}
+					},
+				});
+			});
+
+			frm.add_custom_button(__("View Credit Report HTML"), () => {
+				frappe.call({
+					method: "nomination.api.credit_report.get_credit_report_html",
+					args: { docname: frm.doc.name },
+					callback(r) {
+						if (r.message && r.message.html) {
+							const d = new frappe.ui.Dialog({
+								title: __("Credit Report"),
+								size: "extra-large",
+								fields: [{ fieldtype: "HTML", fieldname: "report" }],
+							});
+							d.fields_dict.report.$wrapper.html(r.message.html);
+							d.show();
 						} else {
 							frappe.msgprint(
 								__("No credit report is available for this nomination.")
@@ -51,3 +75,12 @@ frappe.ui.form.on("Nomination Form", {
 		}
 	},
 });
+
+function b64_to_blob(b64_data, content_type) {
+	const byte_chars = atob(b64_data);
+	const byte_numbers = new Array(byte_chars.length);
+	for (let i = 0; i < byte_chars.length; i++) {
+		byte_numbers[i] = byte_chars.charCodeAt(i);
+	}
+	return new Blob([new Uint8Array(byte_numbers)], { type: content_type });
+}
