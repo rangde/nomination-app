@@ -112,7 +112,17 @@ def get_credit_report(docname):
 	if not html:
 		return {"pdf_base64": None}
 
-	pdf_content = get_pdf(html)
+	pdf_content = get_pdf(
+		html,
+		options={
+			"orientation": "Landscape",
+			"page-size": "A4",
+			"margin-top": "8mm",
+			"margin-bottom": "8mm",
+			"margin-left": "8mm",
+			"margin-right": "8mm",
+		},
+	)
 	return {
 		"pdf_base64": base64.b64encode(pdf_content).decode(),
 		"file_name": f"Credit Report - {docname}.pdf",
