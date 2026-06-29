@@ -85,13 +85,14 @@ doctype_js = {"User": "overrides/user/user.js"}
 # 	"filters": "nomination.utils.jinja_filters"
 # }
 fixtures = [
-	{"dt": "Role", "filters": [["name", "in", ["SHG", "VO", "CLF"]]]},
+	{"dt": "Role", "filters": [["name", "in", ["SHG", "VO", "CLF", "Read Only"]]]},
 	{"dt": "Workflow", "filters": [["workflow_name", "=", "Nomination Workflow"]]},
 	{
 		"dt": "Workflow State",
 		"filters": [["workflow_state_name", "in", ["Draft", "SHG Proposed", "VO Approved", "CLF Approved"]]],
 	},
 	{"dt": "Property Setter"},
+	# {"dt": "Role Permissions Manager", "filters": [["document_type", "in", ["Nomination Form"]]]},
 ]
 # Installation
 # ------------
