@@ -3,11 +3,12 @@ from frappe.utils import get_fullname
 
 from nomination.api.rangde_service import get_metrics
 
+dashboard_access = {"System Manager", "Read only"}
+
 
 def _user_sees_all_nominations(user: str) -> bool:
-	if user == "Administrator":
-		return True
-	return "System Manager" in frappe.get_roles(user)
+	roles = set(frappe.get_roles(user))
+	return bool(dashboard_access & roles)
 
 
 def _get_subordinate_users(manager: str) -> set[str]:
@@ -25,7 +26,7 @@ def _get_subordinate_users(manager: str) -> set[str]:
 	subordinates: set[str] = set()
 	queue = [manager]
 	while queue:
-		current = queue.pop(0)
+		current = queue.popleft(0)
 		for child in children_map.get(current, []):
 			if child not in subordinates:
 				subordinates.add(child)
