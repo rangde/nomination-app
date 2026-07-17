@@ -1,5 +1,31 @@
+import re
+
 import frappe
 import requests
+
+
+def strip_country_code(mobile_number):
+	"""Return the bare 10-digit number, or None if the input isn't one.
+
+	The 91 prefix is only stripped from 12-digit input: a 10-digit number may itself
+	start with 91, so the prefix cannot be detected by leading digits alone.
+	"""
+	digits = re.sub(r"[\s\-()+]", "", str(mobile_number or ""))
+
+	if len(digits) == 12 and digits.startswith("91"):
+		digits = digits[2:]
+
+	if len(digits) != 10 or not digits.isdigit():
+		return None
+
+	return digits
+
+
+def add_country_code(mobile_number):
+	"""Return the 91-prefixed 12-digit number RangDe expects, or None if the input is invalid."""
+	national_number = strip_country_code(mobile_number)
+
+	return f"91{national_number}" if national_number else None
 
 
 def get_base_url():
@@ -72,22 +98,21 @@ def _post(endpoint, data, retry=True):
 
 
 def request_otp(mobileNumber):
-	mobilenumber = mobileNumber.strip()
+	mobile_number = add_country_code(mobileNumber)
+	if not mobile_number:
+		frappe.throw("Invalid mobile number")
 
-	payload = {"mobileNumber": mobilenumber, "purpose": "NOMINATION"}
+	payload = {"mobileNumber": mobile_number, "purpose": "NOMINATION"}
 
 	return _post("borrower-nomination/otp/requests", payload)
 
 
 def verify_otp(mobileNumber, otp):
-	mobileNumber = mobileNumber.strip()
+	mobile_number = add_country_code(mobileNumber)
+	if not mobile_number:
+		frappe.throw("Invalid mobile number")
 
-	if len(mobileNumber) == 10:
-		mobileNumber = "91" + mobileNumber
-	elif len(mobileNumber) != 12:
-		return frappe.log_error(f"Invalid mobile number format: {mobileNumber}", "RangDe Service Error")
-
-	payload = {"mobileNumber": mobileNumber, "code": otp}
+	payload = {"mobileNumber": mobile_number, "code": otp}
 
 	return _post("borrower-nomination/otp/verify", payload)
 

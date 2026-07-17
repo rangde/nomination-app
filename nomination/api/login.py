@@ -1,11 +1,20 @@
 import frappe
 
-from nomination.api.rangde_service import get_tokens, initiate_session, request_otp, verify_otp
+from nomination.api.rangde_service import (
+	get_tokens,
+	initiate_session,
+	request_otp,
+	strip_country_code,
+	verify_otp,
+)
 
 
 @frappe.whitelist(allow_guest=True)
 def user_validation(mobile_number, credit_check=False):
-	mobile_number = str(mobile_number).strip()
+	mobile_number = strip_country_code(mobile_number)
+	if not mobile_number:
+		return {"status": 0, "msg": "Please enter a valid 10-digit mobile number"}
+
 	if not credit_check:
 		user = frappe.db.get_value("User", {"mobile_no": mobile_number}, "name")
 		if not user:
@@ -15,8 +24,7 @@ def user_validation(mobile_number, credit_check=False):
 		if not auth_token or not csrf_token:
 			initiate_session()
 
-	mobile_number_with_prefix = f"91{mobile_number}"
-	send_otp_internal(mobile_number_with_prefix)
+	send_otp_internal(mobile_number)
 
 	return {"status": 1, "msg": "OTP sent successfully"}
 
@@ -32,6 +40,10 @@ def send_otp_internal(mobile_number):
 
 @frappe.whitelist(allow_guest=True)
 def verify_user_otp(mobile_number, otp, credit_check=False):
+	mobile_number = strip_country_code(mobile_number)
+	if not mobile_number:
+		return {"status": 0, "msg": "Please enter a valid 10-digit mobile number"}
+
 	result = verify_otp(mobile_number, otp)
 	messages = result.get("messages", [])
 
@@ -43,18 +55,6 @@ def verify_user_otp(mobile_number, otp, credit_check=False):
 		frappe.response.http_status_code = 417
 		frappe.cache().delete_value(f"otp_verified_{mobile_number}")
 		return {"status": 0, "msg": "Incorrect OTP, please enter the correct OTP"}
-
-	mobile_number = str(mobile_number).strip()
-
-	if len(mobile_number) == 12 and mobile_number.startswith("91"):
-		mobile_number = mobile_number[2:]
-	elif len(mobile_number) == 10:
-		pass
-	else:
-		frappe.log_error(
-			f"Unexpected mobile number format after verification: {mobile_number}",
-			"RangDe OTP Verification Warning",
-		)
 
 	frappe.cache().set_value(f"otp_verified_{mobile_number}", "1", expires_in_sec=300)
 

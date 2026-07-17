@@ -1,7 +1,11 @@
 import frappe
 from frappe.utils import formatdate
 
-from nomination.api.rangde_service import credit_check
+from nomination.api.rangde_service import (
+	add_country_code,
+	credit_check,
+	strip_country_code,
+)
 from nomination.api.state_code import get_state_code
 
 
@@ -10,10 +14,9 @@ def credit_score(**kwargs):
 	if frappe.session.user == "Guest":
 		return {"status": 0, "msg": "Not logged in"}
 
-	mobile = (kwargs.get("mobile_number") or "").strip()
-
+	mobile = strip_country_code(kwargs.get("mobile_number"))
 	if not mobile:
-		return {"status": 0, "msg": "Mobile number required"}
+		return {"status": 0, "msg": "Please enter a valid 10-digit mobile number"}
 
 	verified = frappe.cache().get_value(f"otp_verified_{mobile}")
 	if not verified:
@@ -22,14 +25,6 @@ def credit_score(**kwargs):
 	frappe.cache().delete_value(f"otp_verified_{mobile}")
 
 	try:
-		mobile = (kwargs.get("mobile_number") or "").strip()
-
-		if not mobile:
-			return {"status": 0, "msg": "Mobile number required"}
-
-		if not mobile.startswith("91"):
-			mobile = f"91{mobile}"
-
 		dob = formatdate(kwargs.get("dob"), "dd-MM-yyyy")
 
 		state_code = kwargs.get("state_code")
@@ -50,7 +45,7 @@ def credit_score(**kwargs):
 			"dob": dob,
 			"idType": kwargs.get("id_type"),
 			"idNumber": kwargs.get("id_number"),
-			"mobileNumber": mobile,
+			"mobileNumber": add_country_code(mobile),
 			"district": district,
 			"stateCode": state_code,
 			"pincode": pincode,
