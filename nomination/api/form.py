@@ -79,7 +79,7 @@ def approve_form(name, credit_limit):
 
 	try:
 		user_roles = frappe.get_roles(frappe.session.user)
-		if "SHG" in user_roles and "CLF" not in user_roles and "System Manager" not in user_roles:
+		if "SHG" in user_roles and "GPLF" not in user_roles and "System Manager" not in user_roles:
 			frappe.throw("Not permitted to approve nominations", frappe.PermissionError)
 
 		nomi_doc = frappe.get_doc("Nomination Form", name)
@@ -88,7 +88,7 @@ def approve_form(name, credit_limit):
 		if current_state == "Draft":
 			action = "Send to VO"
 		elif current_state == "SHG Proposed":
-			action = "Send to CLF"
+			action = "Send to GPLF"
 		elif current_state == "VO Approved":
 			action = "Approve"
 		else:

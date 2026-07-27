@@ -23,7 +23,7 @@ def get_approvers(doctype, txt, searchfield, start, page_len, filters):
 	if "SHG" in roles:
 		approver_role = "VO"
 	elif "VO" in roles:
-		approver_role = "CLF"
+		approver_role = "GPLF"
 	else:
 		frappe.throw(_("No valid role found to determine approver."))
 

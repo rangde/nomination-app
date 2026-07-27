@@ -12,19 +12,19 @@
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-02-18 17:56:55.148810",
-  "name": "CLF Approved",
+  "modified": "2026-02-18 17:55:56.364981",
+  "name": "Draft",
   "style": "",
-  "workflow_state_name": "CLF Approved"
+  "workflow_state_name": "Draft"
  },
  {
   "docstatus": 0,
   "doctype": "Workflow State",
   "icon": "",
-  "modified": "2026-02-18 17:55:56.364981",
-  "name": "Draft",
+  "modified": "2026-07-27 12:12:31.263029",
+  "name": "GPLF Approved",
   "style": "",
-  "workflow_state_name": "Draft"
+  "workflow_state_name": "GPLF Approved"
  },
  {
   "docstatus": 0,

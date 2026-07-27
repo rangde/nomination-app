@@ -1,7 +1,7 @@
-frappe.pages["clf-dashboard"].on_page_load = function (wrapper) {
+frappe.pages["gplf-dashboard"].on_page_load = function (wrapper) {
 	let page = frappe.ui.make_app_page({
 		parent: wrapper,
-		title: "CLF Dashboard",
+		title: "GPLF Dashboard",
 		single_column: true,
 	});
 
@@ -145,16 +145,16 @@ function render_nomination(data) {
 		nomination_list_url([["Nomination Form", "workflow_state", "=", "VO Approved"]])
 	);
 	html += card(
-		"CLF Pending",
-		data.clf_pending,
+		"GPLF Pending",
+		data.gplf_pending,
 		"blue",
 		nomination_list_url([["Nomination Form", "workflow_state", "=", "VO Approved"]])
 	);
 	html += card(
-		"CLF Approved",
-		data.clf_approved,
+		"GPLF Approved",
+		data.gplf_approved,
 		"blue",
-		nomination_list_url([["Nomination Form", "workflow_state", "=", "CLF Approved"]])
+		nomination_list_url([["Nomination Form", "workflow_state", "=", "GPLF Approved"]])
 	);
 	$("#nomination_flow").html(html);
 }

@@ -1,6 +1,6 @@
 import frappe
 
-approvers = ["shg", "vo", "clf"]
+approvers = ["shg", "vo", "gplf"]
 
 
 def execute():
