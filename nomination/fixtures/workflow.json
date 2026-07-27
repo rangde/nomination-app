@@ -5,7 +5,7 @@
   "document_type": "Nomination Form",
   "enable_action_confirmation": 0,
   "is_active": 1,
-  "modified": "2026-02-26 16:38:59.818525",
+  "modified": "2026-07-27 12:12:58.573541",
   "name": "Nomination Workflow",
   "override_status": 0,
   "send_email_alert": 0,
@@ -53,7 +53,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "CLF",
+    "allow_edit": "GPLF",
     "avoid_status_override": 0,
     "doc_status": "1",
     "evaluate_as_expression": 0,
@@ -61,9 +61,9 @@
     "message": null,
     "next_action_email_template": null,
     "send_email": 1,
-    "state": "CLF Approved",
+    "state": "GPLF Approved",
     "update_field": "workflow_state",
-    "update_value": "CLF Approved",
+    "update_value": "GPLF Approved",
     "workflow_builder_id": null
    }
   ],
@@ -80,7 +80,7 @@
     "workflow_builder_id": null
    },
    {
-    "action": "Send to CLF",
+    "action": "Send to GPLF",
     "allow_self_approval": 1,
     "allowed": "VO",
     "condition": null,
@@ -93,9 +93,9 @@
    {
     "action": "Approve",
     "allow_self_approval": 1,
-    "allowed": "CLF",
+    "allowed": "GPLF",
     "condition": null,
-    "next_state": "CLF Approved",
+    "next_state": "GPLF Approved",
     "send_email_to_creator": 0,
     "state": "VO Approved",
     "transition_tasks": null,

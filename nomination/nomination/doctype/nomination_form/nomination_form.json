@@ -21,8 +21,8 @@
   "date_of_birth",
   "vo_approval_by",
   "vo_approved_on",
-  "clf_approval_by",
-  "clf_approved_on",
+  "gplf_approval_by",
+  "gplf_approved_on",
   "shg_approval_by",
   "shg_approved_on",
   "enterprise_details_tab",
@@ -45,7 +45,7 @@
   "set_credit_limit",
   "shg_proposed",
   "vo_proposed",
-  "clf_proposed"
+  "gplf_proposed"
  ],
  "fields": [
   {
@@ -233,18 +233,6 @@
    "label": "VO Approved on"
   },
   {
-   "fieldname": "clf_approval_by",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "CLF Approval by"
-  },
-  {
-   "fieldname": "clf_approved_on",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "CLF Approved on"
-  },
-  {
    "fieldname": "shg_approval_by",
    "fieldtype": "Data",
    "hidden": 1,
@@ -267,11 +255,6 @@
    "label": "VO Proposed"
   },
   {
-   "fieldname": "clf_proposed",
-   "fieldtype": "Currency",
-   "label": "CLF Proposed"
-  },
-  {
    "fieldname": "pan_number",
    "fieldtype": "Data",
    "label": "PAN Number",
@@ -282,13 +265,30 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Voter ID"
+  },
+  {
+   "fieldname": "gplf_approval_by",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "GPLF Approval by"
+  },
+  {
+   "fieldname": "gplf_approved_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "GPLF Approved on"
+  },
+  {
+   "fieldname": "gplf_proposed",
+   "fieldtype": "Currency",
+   "label": "GPLF Proposed"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-29 12:18:25.968851",
+ "modified": "2026-07-27 12:26:26.216021",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination Form",
@@ -333,7 +333,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "CLF",
+   "role": "GPLF",
    "submit": 1,
    "write": 1
   },
