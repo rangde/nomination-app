@@ -85,7 +85,7 @@ doctype_js = {"User": "overrides/user/user.js"}
 # 	"filters": "nomination.utils.jinja_filters"
 # }
 fixtures = [
-	{"dt": "Role", "filters": [["name", "in", ["SHG", "VO", "GPLF", "Read Only"]]]},
+	{"dt": "Role", "filters": [["name", "in", ["SHG", "VO", "GPLF", "Read only"]]]},
 	{"dt": "Workflow", "filters": [["workflow_name", "=", "Nomination Workflow"]]},
 	{
 		"dt": "Workflow State",
@@ -98,7 +98,7 @@ fixtures = [
 # ------------
 
 # before_install = "nomination.install.before_install"
-# after_install = "nomination.install.after_install"
+after_install = "nomination.install.after_install"
 
 # Uninstallation
 # ------------
