@@ -100,7 +100,7 @@ fixtures = [
 # ------------
 
 # before_install = "nomination.install.before_install"
-# after_install = "nomination.install.after_install"
+after_install = "nomination.install.after_install"
 
 # Uninstallation
 # ------------
