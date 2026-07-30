@@ -4,9 +4,9 @@
   "doctype": "Workflow State",
   "icon": "",
   "modified": "2026-02-23 01:55:42.869789",
-  "name": "VO Approved",
+  "name": "CLF Approved",
   "style": "Primary",
-  "workflow_state_name": "VO Approved"
+  "workflow_state_name": "CLF Approved"
  },
  {
   "docstatus": 0,
