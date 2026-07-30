@@ -133,22 +133,22 @@ function render_nomination(data) {
 		nomination_list_url([["Nomination Form", "workflow_state", "=", "SHG Proposed"]])
 	);
 	html += card(
-		"VO Pending",
-		data.vo_pending,
+		"CLF Pending",
+		data.clf_pending,
 		"blue",
 		nomination_list_url([["Nomination Form", "workflow_state", "=", "SHG Proposed"]])
 	);
 	html += card(
-		"VO Approved",
-		data.vo_approved,
+		"CLF Approved",
+		data.clf_approved,
 		"blue",
-		nomination_list_url([["Nomination Form", "workflow_state", "=", "VO Approved"]])
+		nomination_list_url([["Nomination Form", "workflow_state", "=", "CLF Approved"]])
 	);
 	html += card(
 		"GPLF Pending",
 		data.gplf_pending,
 		"blue",
-		nomination_list_url([["Nomination Form", "workflow_state", "=", "VO Approved"]])
+		nomination_list_url([["Nomination Form", "workflow_state", "=", "CLF Approved"]])
 	);
 	html += card(
 		"GPLF Approved",

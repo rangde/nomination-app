@@ -19,8 +19,8 @@
   "voter_id",
   "pan_number",
   "date_of_birth",
-  "vo_approval_by",
-  "vo_approved_on",
+  "clf_approval_by",
+  "clf_approved_on",
   "gplf_approval_by",
   "gplf_approved_on",
   "shg_approval_by",
@@ -44,7 +44,7 @@
   "credit_score",
   "set_credit_limit",
   "shg_proposed",
-  "vo_proposed",
+  "clf_proposed",
   "gplf_proposed"
  ],
  "fields": [
@@ -138,7 +138,7 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "Please review all information carefully. Once submitted, you cannot edit this application. It will be forwarded to VO for approval",
+   "default": "Please review all information carefully. Once submitted, you cannot edit this application. It will be forwarded to CLF for approval",
    "fieldname": "final_review",
    "fieldtype": "Small Text",
    "label": "Final Review",
@@ -221,16 +221,16 @@
    "reqd": 1
   },
   {
-   "fieldname": "vo_approval_by",
+   "fieldname": "clf_approval_by",
    "fieldtype": "Data",
    "hidden": 1,
-   "label": "VO Approval by"
+   "label": "CLF Approval by"
   },
   {
-   "fieldname": "vo_approved_on",
+   "fieldname": "clf_approved_on",
    "fieldtype": "Datetime",
    "hidden": 1,
-   "label": "VO Approved on"
+   "label": "CLF Approved on"
   },
   {
    "fieldname": "shg_approval_by",
@@ -250,9 +250,9 @@
    "label": "SHG Proposed"
   },
   {
-   "fieldname": "vo_proposed",
+   "fieldname": "clf_proposed",
    "fieldtype": "Currency",
-   "label": "VO Proposed"
+   "label": "CLF Proposed"
   },
   {
    "fieldname": "pan_number",
@@ -324,7 +324,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "VO",
+   "role": "CLF",
    "write": 1
   },
   {

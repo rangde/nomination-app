@@ -39,7 +39,7 @@
     "workflow_builder_id": null
    },
    {
-    "allow_edit": "VO",
+    "allow_edit": "CLF",
     "avoid_status_override": 0,
     "doc_status": "0",
     "evaluate_as_expression": 0,
@@ -47,9 +47,9 @@
     "message": null,
     "next_action_email_template": null,
     "send_email": 1,
-    "state": "VO Approved",
+    "state": "CLF Approved",
     "update_field": "workflow_state",
-    "update_value": "VO Approved",
+    "update_value": "CLF Approved",
     "workflow_builder_id": null
    },
    {
@@ -69,7 +69,7 @@
   ],
   "transitions": [
    {
-    "action": "Send to VO",
+    "action": "Send to CLF",
     "allow_self_approval": 1,
     "allowed": "SHG",
     "condition": null,
@@ -82,9 +82,9 @@
    {
     "action": "Send to GPLF",
     "allow_self_approval": 1,
-    "allowed": "VO",
+    "allowed": "CLF",
     "condition": null,
-    "next_state": "VO Approved",
+    "next_state": "CLF Approved",
     "send_email_to_creator": 0,
     "state": "SHG Proposed",
     "transition_tasks": null,
@@ -97,7 +97,7 @@
     "condition": null,
     "next_state": "GPLF Approved",
     "send_email_to_creator": 0,
-    "state": "VO Approved",
+    "state": "CLF Approved",
     "transition_tasks": null,
     "workflow_builder_id": null
    }

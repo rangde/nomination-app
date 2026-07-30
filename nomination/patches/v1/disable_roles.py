@@ -2,4 +2,8 @@ from nomination.install import setup_roles
 
 
 def execute():
-	setup_roles()
+	nomination_roles = ["SHG", "CLF", "GPLF", "System Manager", "Administrator", "All", "Guest"]
+
+	roles = frappe.db.set_value("Role", {"name": ["not in", nomination_roles]}, "disabled", 1)
+
+	return roles

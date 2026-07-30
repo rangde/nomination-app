@@ -86,10 +86,10 @@ def approve_form(name, credit_limit):
 		current_state = nomi_doc.workflow_state
 
 		if current_state == "Draft":
-			action = "Send to VO"
+			action = "Send to CLF"
 		elif current_state == "SHG Proposed":
 			action = "Send to GPLF"
-		elif current_state == "VO Approved":
+		elif current_state == "CLF Approved":
 			action = "Approve"
 		else:
 			return {"status": 0, "msg": "Not a valid Workflow Action"}
@@ -155,7 +155,7 @@ def submit_nomination(payload):
 			setattr(doc, item, 1)
 
 	doc.insert(ignore_permissions=True)
-	apply_workflow(doc, "Send to VO")
+	apply_workflow(doc, "Send to CLF")
 
 	report_base64 = payload.get("reportBase64")
 	if report_base64:
