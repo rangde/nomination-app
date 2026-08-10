@@ -20,9 +20,9 @@
   "home_page": null,
   "is_custom": 0,
   "modified": "2026-02-18 17:56:46.999445",
-  "name": "VO",
+  "name": "CLF",
   "restrict_to_domain": null,
-  "role_name": "VO",
+  "role_name": "CLF",
   "two_factor_auth": 0
  },
  {
@@ -33,9 +33,9 @@
   "home_page": null,
   "is_custom": 0,
   "modified": "2026-02-25 12:43:45.901091",
-  "name": "CLF",
+  "name": "GPLF",
   "restrict_to_domain": null,
-  "role_name": "CLF",
+  "role_name": "GPLF",
   "two_factor_auth": 0
  },
  {

@@ -24,8 +24,8 @@
    "icon": "layout-dashboard",
    "indent": 0,
    "keep_closed": 0,
-   "label": "CLF Dashboard",
-   "link_to": "clf-dashboard",
+   "label": "GPLF Dashboard",
+   "link_to": "gplf-dashboard",
    "link_type": "Page",
    "show_arrow": 0,
    "type": "Link"
@@ -43,7 +43,7 @@
    "type": "Link"
   }
  ],
- "modified": "2026-04-07 23:08:08.259365",
+ "modified": "2026-07-27 12:31:09.468928",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination",

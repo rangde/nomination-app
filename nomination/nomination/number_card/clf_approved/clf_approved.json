@@ -1,6 +1,6 @@
 {
  "aggregate_function_based_on": "",
- "creation": "2026-02-18 18:11:25.068146",
+ "creation": "2026-02-18 18:10:39.554769",
  "currency": "INR",
  "docstatus": 0,
  "doctype": "Number Card",
@@ -12,7 +12,7 @@
  "is_public": 1,
  "is_standard": 1,
  "label": "CLF Approved",
- "modified": "2026-02-18 18:11:39.770009",
+ "modified": "2026-02-18 18:10:43.474199",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "CLF Approved",

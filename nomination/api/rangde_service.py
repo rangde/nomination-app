@@ -3,6 +3,11 @@ import re
 import frappe
 import requests
 
+# (connect, read). Connecting should be quick; RangDe's OTP and credit-check
+# endpoints regularly take longer than 10s to answer, and cutting them off mid
+# response makes a request that actually succeeded look like a failure.
+REQUEST_TIMEOUT = (5, 30)
+
 
 def strip_country_code(mobile_number):
 	"""Return the bare 10-digit number, or None if the input isn't one.
@@ -44,7 +49,7 @@ def initiate_session():
 
 	headers = rangde_headers()
 
-	response = requests.get(url, headers=headers, timeout=10)
+	response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
 	if response.status_code != 200:
 		frappe.throw("Failed to initiate RangDe session")
@@ -84,7 +89,7 @@ def _post(endpoint, data, retry=True):
 
 	url = f"{get_base_url()}/{endpoint}"
 
-	response = requests.post(url, headers=headers, data=payload, timeout=10)
+	response = requests.post(url, headers=headers, data=payload, timeout=REQUEST_TIMEOUT)
 
 	if response.status_code == 401 and retry:
 		initiate_session()
@@ -126,7 +131,7 @@ def credit_check(data):
 def get_metrics():
 	headers = rangde_headers()
 	url = f"{get_base_url()}/borrower-nomination/metrics"
-	response = requests.get(url, headers=headers, timeout=10)
+	response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 	return response.json()
 
 

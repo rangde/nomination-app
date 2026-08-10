@@ -4,16 +4,16 @@
  "docstatus": 0,
  "doctype": "Page",
  "idx": 0,
- "modified": "2026-07-01 18:32:41.872366",
+ "modified": "2026-07-27 12:21:17.319806",
  "modified_by": "Administrator",
  "module": "Nomination",
- "name": "clf-dashboard",
+ "name": "gplf-dashboard",
  "owner": "Administrator",
- "page_name": "clf-dashboard",
+ "page_name": "gplf-dashboard",
  "roles": [],
  "script": null,
  "standard": "Yes",
  "style": null,
  "system_page": 0,
- "title": "CLF Dashboard"
+ "title": "GPLF Dashboard"
 }

@@ -17,8 +17,8 @@ class NominationForm(Document):
 		role_field_map = frappe._dict(
 			{
 				"SHG Proposed": "shg_proposed",
-				"VO Approved": "vo_proposed",
 				"CLF Approved": "clf_proposed",
+				"GPLF Approved": "gplf_proposed",
 			}
 		)
 		if role_field_map.get(self.workflow_state):
@@ -40,8 +40,8 @@ class NominationForm(Document):
 		approved_by = frappe._dict(
 			{
 				"SHG Proposed": "shg",
-				"VO Approved": "vo",
 				"CLF Approved": "clf",
+				"GPLF Approved": "gplf",
 			}
 		)
 		if approved_by.get(self.workflow_state):

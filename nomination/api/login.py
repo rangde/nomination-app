@@ -1,4 +1,5 @@
 import frappe
+import requests
 
 from nomination.api.rangde_service import (
 	get_tokens,
@@ -33,7 +34,19 @@ def send_otp_internal(mobile_number):
 	try:
 		result = request_otp(mobile_number)
 		return result
+	except requests.exceptions.ReadTimeout:
+		# The request was fully delivered and the gateway simply answered too
+		# slowly — the SMS is normally sent in this case. Reporting a failure here
+		# tells the user the OTP never came while their phone is buzzing, so let
+		# them proceed to the OTP screen instead.
+		#
+		# Deliberately not retried: a second request sends a second OTP and can
+		# invalidate the code the user already has.
+		frappe.log_error(frappe.get_traceback(), "RangDe OTP Response Timeout")
+		return None
 	except Exception:
+		# Connect timeouts and connection errors mean the request never landed,
+		# so no OTP was sent and failing is correct.
 		frappe.log_error(frappe.get_traceback(), "RangDe OTP Service Error")
 		frappe.throw("OTP service is temporarily unavailable. Please try again later.")
 

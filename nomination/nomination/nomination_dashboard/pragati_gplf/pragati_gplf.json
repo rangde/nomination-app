@@ -4,16 +4,19 @@
    "card": "SHG Proposed"
   },
   {
-   "card": "VO Approved"
-  },
-  {
    "card": "CLF Approved"
   },
   {
+   "card": "GPLF Approved"
+  },
+  {
    "card": "Training and Assessments"
   },
   {
    "card": "Training and Assessments"
+  },
+  {
+   "card": "GPLF Approved"
   }
  ],
  "charts": [
@@ -22,15 +25,15 @@
   }
  ],
  "creation": "2026-02-18 18:05:56.525745",
- "dashboard_name": "Pragati CLF",
+ "dashboard_name": "Pragati GPLF",
  "docstatus": 0,
  "doctype": "Dashboard",
  "idx": 0,
  "is_default": 1,
  "is_standard": 1,
- "modified": "2026-03-07 15:36:19.229071",
+ "modified": "2026-07-27 12:20:27.325547",
  "modified_by": "Administrator",
  "module": "Nomination",
- "name": "Pragati CLF",
+ "name": "Pragati GPLF",
  "owner": "Administrator"
 }

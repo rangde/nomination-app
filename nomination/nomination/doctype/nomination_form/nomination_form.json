@@ -19,10 +19,10 @@
   "voter_id",
   "pan_number",
   "date_of_birth",
-  "vo_approval_by",
-  "vo_approved_on",
   "clf_approval_by",
   "clf_approved_on",
+  "gplf_approval_by",
+  "gplf_approved_on",
   "shg_approval_by",
   "shg_approved_on",
   "enterprise_details_tab",
@@ -44,8 +44,8 @@
   "credit_score",
   "set_credit_limit",
   "shg_proposed",
-  "vo_proposed",
-  "clf_proposed"
+  "clf_proposed",
+  "gplf_proposed"
  ],
  "fields": [
   {
@@ -138,7 +138,7 @@
    "fieldtype": "Section Break"
   },
   {
-   "default": "Please review all information carefully. Once submitted, you cannot edit this application. It will be forwarded to VO for approval",
+   "default": "Please review all information carefully. Once submitted, you cannot edit this application. It will be forwarded to CLF for approval",
    "fieldname": "final_review",
    "fieldtype": "Small Text",
    "label": "Final Review",
@@ -221,18 +221,6 @@
    "reqd": 1
   },
   {
-   "fieldname": "vo_approval_by",
-   "fieldtype": "Data",
-   "hidden": 1,
-   "label": "VO Approval by"
-  },
-  {
-   "fieldname": "vo_approved_on",
-   "fieldtype": "Datetime",
-   "hidden": 1,
-   "label": "VO Approved on"
-  },
-  {
    "fieldname": "clf_approval_by",
    "fieldtype": "Data",
    "hidden": 1,
@@ -262,11 +250,6 @@
    "label": "SHG Proposed"
   },
   {
-   "fieldname": "vo_proposed",
-   "fieldtype": "Currency",
-   "label": "VO Proposed"
-  },
-  {
    "fieldname": "clf_proposed",
    "fieldtype": "Currency",
    "label": "CLF Proposed"
@@ -282,13 +265,30 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Voter ID"
+  },
+  {
+   "fieldname": "gplf_approval_by",
+   "fieldtype": "Data",
+   "hidden": 1,
+   "label": "GPLF Approval by"
+  },
+  {
+   "fieldname": "gplf_approved_on",
+   "fieldtype": "Datetime",
+   "hidden": 1,
+   "label": "GPLF Approved on"
+  },
+  {
+   "fieldname": "gplf_proposed",
+   "fieldtype": "Currency",
+   "label": "GPLF Proposed"
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-29 12:18:25.968851",
+ "modified": "2026-07-27 12:26:26.216021",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination Form",
@@ -324,7 +324,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "VO",
+   "role": "CLF",
    "write": 1
   },
   {
@@ -333,7 +333,7 @@
    "print": 1,
    "read": 1,
    "report": 1,
-   "role": "CLF",
+   "role": "GPLF",
    "submit": 1,
    "write": 1
   },

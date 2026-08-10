@@ -90,25 +90,25 @@ def get_nomination_list():
 	if "SHG" in roles:
 		response = {
 			"submitted": get_nominations(
-				workflow_state=["SHG Proposed", "VO Approved"],
+				workflow_state=["SHG Proposed", "CLF Approved"],
 				approval_field="shg_approval_by",
 				approver_name=full_name,
 			),
 			"ready_for_training": get_nominations(
-				workflow_state="CLF Approved", approval_field="shg_approval_by", approver_name=full_name
+				workflow_state="GPLF Approved", approval_field="shg_approval_by", approver_name=full_name
 			),
-		}
-
-	elif "VO" in roles:
-		response = {
-			"submitted": get_nominations(workflow_state="SHG Proposed"),
-			"ready_for_training": get_nominations(approval_field="vo_approval_by", approver_name=full_name),
 		}
 
 	elif "CLF" in roles:
 		response = {
-			"submitted": get_nominations(workflow_state="VO Approved"),
+			"submitted": get_nominations(workflow_state="SHG Proposed"),
 			"ready_for_training": get_nominations(approval_field="clf_approval_by", approver_name=full_name),
+		}
+
+	elif "GPLF" in roles:
+		response = {
+			"submitted": get_nominations(workflow_state="CLF Approved"),
+			"ready_for_training": get_nominations(approval_field="gplf_approval_by", approver_name=full_name),
 		}
 
 	return {"status": 1, "msg": [response]}
@@ -122,10 +122,10 @@ def get_dashboard_metrics():
 	return {
 		"nomination": {
 			"shg_approved": _count_nomination_forms("SHG Proposed", owners),
-			"vo_pending": _count_nomination_forms("SHG Proposed", owners),
-			"vo_approved": _count_nomination_forms("VO Approved", owners),
-			"clf_pending": _count_nomination_forms("VO Approved", owners),
+			"clf_pending": _count_nomination_forms("SHG Proposed", owners),
 			"clf_approved": _count_nomination_forms("CLF Approved", owners),
+			"gplf_pending": _count_nomination_forms("CLF Approved", owners),
+			"gplf_approved": _count_nomination_forms("GPLF Approved", owners),
 		},
 		"training": {
 			"total_registered": metrics.get("totalTrainees"),
