@@ -2,8 +2,12 @@ import frappe
 from frappe.core.doctype.role.role import STANDARD_ROLES
 from frappe.permissions import SYSTEM_USER_ROLE
 
-# Roles this app defines and assigns.
-NOMINATION_ROLES = ("SHG", "VO", "GPLF", "Read only")
+# Roles this app defines and assigns. Both "VO" and "CLF" are listed because the
+# tier-2 role name differs by state and is mid-rename: rename_vo_role_to_clf turns
+# VO into CLF on Odisha, while Bihar still uses VO for tier 2 and CLF for tier 3.
+# Listing every tier name any state uses means this never disables a live role,
+# whichever state the site belongs to and whichever side of the rename it is on.
+NOMINATION_ROLES = ("SHG", "VO", "CLF", "GPLF", "Read only")
 
 # Roles the desk breaks without. STANDARD_ROLES covers Administrator, System Manager,
 # Script Manager, All and Guest; SYSTEM_USER_ROLE ("Desk User") drives System User
