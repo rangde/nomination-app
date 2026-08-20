@@ -9,6 +9,7 @@
   "applicant_details_tab",
   "section_break_r7kw",
   "amended_from",
+  "full_name",
   "first_name",
   "last_name",
   "pincode",
@@ -19,18 +20,28 @@
   "voter_id",
   "pan_number",
   "date_of_birth",
-  "vo_approval_by",
-  "vo_approved_on",
-  "clf_approval_by",
-  "clf_approved_on",
-  "shg_approval_by",
-  "shg_approved_on",
+  "photo_of_didi",
+  "shg_record_tab",
+  "name_of_the_vo",
+  "name_of_the_shg",
+  "year_of_joining_shg",
+  "attendance_in_last_12_meetings",
+  "repayment_record",
+  "total_savings_in_shg",
   "enterprise_details_tab",
   "sector_type_section",
   "farm_based",
   "non_farm",
   "section_break_wwjz",
   "business_category",
+  "years_of_experience",
+  "number_of_business",
+  "family_support_in_enterprise",
+  "who_helps_in_business_or_finances_section",
+  "hushband",
+  "children",
+  "in_laws",
+  "no_one",
   "select_support_you_need_optional_section",
   "market_access",
   "marketing",
@@ -45,7 +56,15 @@
   "set_credit_limit",
   "shg_proposed",
   "vo_proposed",
-  "clf_proposed"
+  "clf_proposed",
+  "approvers_tab",
+  "vo_approval_by",
+  "shg_approved_on",
+  "vo_approved_on",
+  "clf_approval_by",
+  "clf_approved_on",
+  "shg_approval_by",
+  "table_nmzc"
  ],
  "fields": [
   {
@@ -73,8 +92,7 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Aadhaar Number",
-   "placeholder": "12-digit number",
-   "reqd": 1
+   "placeholder": "12-digit number"
   },
   {
    "fieldname": "credit_details_tab",
@@ -199,8 +217,7 @@
    "fieldname": "set_credit_limit",
    "fieldtype": "Select",
    "label": "Set Credit Limit",
-   "options": "50000\n100000\n150000\n200000\n250000\n300000",
-   "reqd": 1
+   "options": "50000\n100000\n150000\n200000\n250000\n300000"
   },
   {
    "fieldname": "credit_score",
@@ -217,8 +234,7 @@
   {
    "fieldname": "last_name",
    "fieldtype": "Data",
-   "label": "Last Name",
-   "reqd": 1
+   "label": "Last Name"
   },
   {
    "fieldname": "vo_approval_by",
@@ -282,13 +298,117 @@
    "fieldtype": "Data",
    "in_list_view": 1,
    "label": "Voter ID"
+  },
+  {
+   "fieldname": "shg_record_tab",
+   "fieldtype": "Tab Break",
+   "label": "SHG Record"
+  },
+  {
+   "fieldname": "name_of_the_vo",
+   "fieldtype": "Data",
+   "label": "Name of the VO"
+  },
+  {
+   "fieldname": "name_of_the_shg",
+   "fieldtype": "Data",
+   "label": "Name of the SHG"
+  },
+  {
+   "fieldname": "year_of_joining_shg",
+   "fieldtype": "Data",
+   "label": "Year of Joining SHG"
+  },
+  {
+   "fieldname": "attendance_in_last_12_meetings",
+   "fieldtype": "Select",
+   "label": "Attendance in Last 12 Meetings",
+   "options": "10 or more\n7 to 9\nfewer than 7"
+  },
+  {
+   "fieldname": "repayment_record",
+   "fieldtype": "Select",
+   "label": "Repayment Record",
+   "options": "Always on time\nMostly on time\nHas delayed"
+  },
+  {
+   "fieldname": "total_savings_in_shg",
+   "fieldtype": "Currency",
+   "label": "Total Savings in SHG"
+  },
+  {
+   "fieldname": "years_of_experience",
+   "fieldtype": "Data",
+   "label": "Years of Experience"
+  },
+  {
+   "fieldname": "number_of_business",
+   "fieldtype": "Select",
+   "label": "Number of Business"
+  },
+  {
+   "fieldname": "family_support_in_enterprise",
+   "fieldtype": "Select",
+   "label": "Family Support in Enterprise",
+   "options": "Yes\nPartially\nNo"
+  },
+  {
+   "fieldname": "who_helps_in_business_or_finances_section",
+   "fieldtype": "Section Break",
+   "label": "Who helps in business or finances?"
+  },
+  {
+   "default": "0",
+   "fieldname": "hushband",
+   "fieldtype": "Check",
+   "label": "Hushband"
+  },
+  {
+   "default": "0",
+   "fieldname": "children",
+   "fieldtype": "Check",
+   "label": "Children"
+  },
+  {
+   "default": "0",
+   "fieldname": "in_laws",
+   "fieldtype": "Check",
+   "label": "In_laws"
+  },
+  {
+   "default": "0",
+   "fieldname": "no_one",
+   "fieldtype": "Check",
+   "label": "None"
+  },
+  {
+   "fieldname": "full_name",
+   "fieldtype": "Data",
+   "label": "Full Name"
+  },
+  {
+   "fieldname": "approvers_tab",
+   "fieldtype": "Tab Break",
+   "label": "Approvers"
+  },
+  {
+   "fieldname": "photo_of_didi",
+   "fieldtype": "Attach Image",
+   "label": "Photo of Didi"
+  },
+  {
+   "fieldname": "table_nmzc",
+   "fieldtype": "Table",
+   "label": "Approvers",
+   "options": "Leaders Details",
+   "read_only": 1
   }
  ],
  "grid_page_length": 50,
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-06-29 12:18:25.968851",
+ "modified": "2026-08-20 19:05:00.000000",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination Form",
