@@ -249,6 +249,7 @@ def submit_nomination(payload):
 			{
 				"name1": leader["label"],
 				"mobile_number": f"+91- {leader['mobile_number']}",
+				"verified_on": leader.get("verified_on"),
 			},
 		)
 
