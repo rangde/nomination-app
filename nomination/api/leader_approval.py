@@ -1,4 +1,7 @@
+import json
+
 import frappe
+from frappe.utils import now
 
 from nomination.api.login import send_otp_internal, verify_otp_internal
 from nomination.api.rangde_service import strip_country_code
@@ -51,10 +54,30 @@ ROLE_LABELS = {
 }
 
 
+def _read_approval(level, role):
+	"""Return the stored approval as a dict, tolerating an older bare number."""
+	raw = frappe.cache().get_value(_approved_key(level, role))
+	if not raw:
+		return None
+
+	if isinstance(raw, dict):
+		return raw
+
+	try:
+		parsed = json.loads(raw)
+	except (TypeError, ValueError):
+		return {"mobile_number": raw, "verified_on": None}
+
+	if isinstance(parsed, dict):
+		return parsed
+
+	return {"mobile_number": raw, "verified_on": None}
+
+
 def get_approved_roles(level=DEFAULT_LEVEL):
 	"""Roles that completed OTP verification at this level in this session."""
 	level = _clean_level(level) or DEFAULT_LEVEL
-	return [role for role in LEADER_ROLES if frappe.cache().get_value(_approved_key(level, role))]
+	return [role for role in LEADER_ROLES if _read_approval(level, role)]
 
 
 def get_approved_leaders(level=DEFAULT_LEVEL):
@@ -63,8 +86,8 @@ def get_approved_leaders(level=DEFAULT_LEVEL):
 	leaders = []
 
 	for role in LEADER_ROLES:
-		mobile_number = frappe.cache().get_value(_approved_key(level, role))
-		if not mobile_number:
+		approval = _read_approval(level, role)
+		if not approval:
 			continue
 
 		role_label = ROLE_LABELS.get(role, role.title())
@@ -75,7 +98,8 @@ def get_approved_leaders(level=DEFAULT_LEVEL):
 				"level": level,
 				# the approvers table is shared across SHG, VO and CLF
 				"label": f"{level}-{role_label}",
-				"mobile_number": mobile_number,
+				"mobile_number": approval.get("mobile_number"),
+				"verified_on": approval.get("verified_on"),
 			}
 		)
 
@@ -162,11 +186,19 @@ def verify_leader_otp(mobile_number, otp, role, level=DEFAULT_LEVEL):
 		frappe.cache().delete_value(_approved_key(level, role))
 		return {"status": 0, "msg": "Incorrect OTP, please enter the correct OTP"}
 
-	frappe.cache().set_value(_approved_key(level, role), mobile_number, expires_in_sec=APPROVAL_TTL_SEC)
+	# the timestamp is taken here so a wrong device clock cannot stamp an approval
+	verified_on = now()
+
+	frappe.cache().set_value(
+		_approved_key(level, role),
+		json.dumps({"mobile_number": mobile_number, "verified_on": verified_on}),
+		expires_in_sec=APPROVAL_TTL_SEC,
+	)
 
 	return {
 		"status": 1,
 		"msg": "OTP verified successfully",
+		"verified_on": verified_on,
 		"approved_leaders": get_approved_roles(level),
 	}
 
