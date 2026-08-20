@@ -3,6 +3,10 @@ import re
 import frappe
 import requests
 
+# (connect, read): the host resolves to several addresses, so a blackholed route
+# is retried per address and a single combined timeout stalls the whole request
+REQUEST_TIMEOUT = (3, 10)
+
 
 def strip_country_code(mobile_number):
 	"""Return the bare 10-digit number, or None if the input isn't one.
@@ -44,7 +48,7 @@ def initiate_session():
 
 	headers = rangde_headers()
 
-	response = requests.get(url, headers=headers, timeout=10)
+	response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
 	if response.status_code != 200:
 		frappe.throw("Failed to initiate RangDe session")
@@ -84,7 +88,7 @@ def _post(endpoint, data, retry=True):
 
 	url = f"{get_base_url()}/{endpoint}"
 
-	response = requests.post(url, headers=headers, data=payload, timeout=10)
+	response = requests.post(url, headers=headers, data=payload, timeout=REQUEST_TIMEOUT)
 
 	if response.status_code == 401 and retry:
 		initiate_session()
@@ -126,7 +130,7 @@ def credit_check(data):
 def get_metrics():
 	headers = rangde_headers()
 	url = f"{get_base_url()}/borrower-nomination/metrics"
-	response = requests.get(url, headers=headers, timeout=10)
+	response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 	return response.json()
 
 
