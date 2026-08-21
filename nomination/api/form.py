@@ -88,6 +88,32 @@ def get_nomination_form(name):
 	return {"status": 1, "msg": [data]}
 
 
+def add_approver_rows(doc, approved_leaders):
+	"""Write the approving leaders straight into the shared approvers table.
+
+	The rows have to be on disk before apply_workflow runs, because it reloads the
+	document and drops anything unsaved. Saving the parent instead would re-run
+	validate, and set_approval_log stamps the current state's approver on every
+	save, which would overwrite whoever actually approved the previous stage.
+	"""
+	idx = len(doc.get(APPROVERS_TABLE) or [])
+
+	for leader in approved_leaders:
+		idx += 1
+		frappe.get_doc(
+			{
+				"doctype": "Leaders Details",
+				"parent": doc.name,
+				"parenttype": doc.doctype,
+				"parentfield": APPROVERS_TABLE,
+				"idx": idx,
+				"name1": leader["label"],
+				"mobile_number": f"+91- {leader['mobile_number']}",
+				"verified_on": leader.get("verified_on"),
+			}
+		).insert(ignore_permissions=True)
+
+
 @frappe.whitelist()
 def approve_form(name, credit_limit):
 	if not frappe.db.exists("Nomination Form", name):
@@ -130,22 +156,7 @@ def approve_form(name, credit_limit):
 			)
 			nomi_doc.reload()
 
-		# the approvers table is shared across the stages, so each row records the
-		# level it was approved at
-		for leader in approved_leaders:
-			nomi_doc.append(
-				APPROVERS_TABLE,
-				{
-					"name1": leader["label"],
-					"mobile_number": f"+91- {leader['mobile_number']}",
-					"verified_on": leader.get("verified_on"),
-				},
-			)
-
-		# apply_workflow reloads the document, so the rows have to be on disk before
-		# the transition runs or they are dropped
-		if approved_leaders:
-			nomi_doc.save(ignore_permissions=True)
+		add_approver_rows(nomi_doc, approved_leaders)
 
 		apply_workflow(nomi_doc, action)
 
