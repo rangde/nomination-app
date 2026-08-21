@@ -16,6 +16,13 @@ from .validation import validate_aadhaar_number, validate_date_of_birth, validat
 
 APPROVERS_TABLE = "table_nmzc"
 
+# the SHG submits, the VO reviews it next, and the CLF reviews after that, so the
+# state a nomination is sitting in says whose leaders have to approve to move it on
+STATE_APPROVAL_LEVEL = {
+	"SHG Proposed": "VO",
+	"VO Approved": "CLF",
+}
+
 
 @frappe.whitelist()
 def validate_aadhaar(aadhaar_number):
@@ -103,6 +110,16 @@ def approve_form(name, credit_limit):
 		else:
 			return {"status": 0, "msg": "Not a valid Workflow Action"}
 
+		level = STATE_APPROVAL_LEVEL.get(current_state)
+
+		# trust only the OTP verifications recorded server side, never the payload
+		approved_leaders = get_approved_leaders(level) if level else []
+		if level and len(approved_leaders) < MIN_APPROVALS:
+			return {
+				"status": 0,
+				"msg": f"Any {MIN_APPROVALS} of {len(LEADER_ROLES)} {level} leaders must approve via OTP",
+			}
+
 		new_credit_limit = flt(credit_limit)
 		if nomi_doc.set_credit_limit != new_credit_limit:
 			frappe.db.set_value(nomi_doc.doctype, nomi_doc.name, "set_credit_limit", credit_limit)
@@ -113,7 +130,28 @@ def approve_form(name, credit_limit):
 			)
 			nomi_doc.reload()
 
+		# the approvers table is shared across the stages, so each row records the
+		# level it was approved at
+		for leader in approved_leaders:
+			nomi_doc.append(
+				APPROVERS_TABLE,
+				{
+					"name1": leader["label"],
+					"mobile_number": f"+91- {leader['mobile_number']}",
+					"verified_on": leader.get("verified_on"),
+				},
+			)
+
+		# apply_workflow reloads the document, so the rows have to be on disk before
+		# the transition runs or they are dropped
+		if approved_leaders:
+			nomi_doc.save(ignore_permissions=True)
+
 		apply_workflow(nomi_doc, action)
+
+		# the cached approvals are spent once they are on the document
+		if level:
+			clear_approvals(level)
 
 		return {"status": 1, "msg": f"{name} Document has been moved to next workflow state"}
 
