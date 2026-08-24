@@ -37,6 +37,11 @@ def _approved_key(level, role):
 	return f"leader_otp_approved_{frappe.session.user}_{level}_{role}"
 
 
+def _can_update_nomination(doc):
+	roles = set(frappe.get_roles(frappe.session.user))
+	return doc.owner == frappe.session.user or "System Manager" in roles
+
+
 def _duplicate_role(level, role, mobile_number):
 	"""Return the other role at this level already using this number, if any."""
 	for other in LEADER_ROLES:
@@ -106,6 +111,42 @@ def get_approved_leaders(level=DEFAULT_LEVEL):
 	return leaders
 
 
+def record_draft_leader_approval(nomination_name, level, role, mobile_number, verified_on):
+	if not nomination_name:
+		return
+
+	level = _clean_level(level)
+	role = _clean_role(role)
+	if level != DEFAULT_LEVEL or not role:
+		return
+
+	if not frappe.db.exists("Nomination Form", nomination_name):
+		return
+
+	doc = frappe.get_doc("Nomination Form", nomination_name)
+	if doc.workflow_state != "Draft" or not _can_update_nomination(doc):
+		return
+
+	role_label = ROLE_LABELS.get(role, role.title())
+	label = f"{level}-{role_label}"
+	mobile_number = strip_country_code(mobile_number)
+
+	doc.set(
+		"table_nmzc",
+		[row for row in doc.get("table_nmzc") or [] if row.name1 != label],
+	)
+	doc.append(
+		"table_nmzc",
+		{
+			"name1": label,
+			"mobile_number": f"+91- {mobile_number}",
+			"verified_on": verified_on,
+		},
+	)
+	setattr(doc, f"{role}_approved", 1)
+	doc.save(ignore_permissions=True)
+
+
 def clear_approvals(level=DEFAULT_LEVEL):
 	level = _clean_level(level) or DEFAULT_LEVEL
 	for role in LEADER_ROLES:
@@ -147,7 +188,7 @@ def send_leader_otp(mobile_number, role, level=DEFAULT_LEVEL):
 
 
 @frappe.whitelist()
-def verify_leader_otp(mobile_number, otp, role, level=DEFAULT_LEVEL):
+def verify_leader_otp(mobile_number, otp, role, level=DEFAULT_LEVEL, nomination_name=None):
 	if frappe.session.user == "Guest":
 		return {"status": 0, "msg": "Not logged in"}
 
@@ -194,6 +235,8 @@ def verify_leader_otp(mobile_number, otp, role, level=DEFAULT_LEVEL):
 		json.dumps({"mobile_number": mobile_number, "verified_on": verified_on}),
 		expires_in_sec=APPROVAL_TTL_SEC,
 	)
+
+	record_draft_leader_approval(nomination_name, level, role, mobile_number, verified_on)
 
 	return {
 		"status": 1,
