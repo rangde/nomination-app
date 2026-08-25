@@ -311,6 +311,17 @@ def _get_owned_draft(name=None):
 	return doc
 
 
+def _get_owned_nomination(name):
+	if not name or not frappe.db.exists("Nomination Form", name):
+		return None
+
+	doc = frappe.get_doc("Nomination Form", name)
+	if not _can_update_draft(doc):
+		return None
+
+	return doc
+
+
 def _save_nomination_attachments(doc, payload):
 	report_base64 = payload.get("reportBase64")
 	if report_base64:
@@ -440,7 +451,13 @@ def submit_nomination(payload):
 		return {"status": 0, "msg": "Not logged in"}
 
 	payload = _parse_payload(payload)
-	doc = _get_owned_draft(payload.get("draft_name") or payload.get("name"))
+	requested_name = payload.get("draft_name") or payload.get("name")
+	doc = _get_owned_draft(requested_name)
+	if not doc:
+		existing_doc = _get_owned_nomination(requested_name)
+		if existing_doc and existing_doc.workflow_state != "Draft":
+			return {"status": 1, "msg": existing_doc.name}
+
 	is_new = doc is None
 
 	if is_new:
@@ -484,7 +501,13 @@ def save_nomination_draft(payload):
 		return {"status": 0, "msg": "Not logged in"}
 
 	payload = _parse_payload(payload)
-	doc = _get_owned_draft(payload.get("draft_name") or payload.get("name"))
+	requested_name = payload.get("draft_name") or payload.get("name")
+	doc = _get_owned_draft(requested_name)
+	if not doc:
+		existing_doc = _get_owned_nomination(requested_name)
+		if existing_doc and existing_doc.workflow_state != "Draft":
+			return {"status": 1, "msg": _draft_response(existing_doc)}
+
 	is_new = doc is None
 	approvals_cleared = False
 

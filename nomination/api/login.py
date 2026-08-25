@@ -19,7 +19,6 @@ def user_validation(mobile_number, credit_check=False):
 		user = frappe.db.get_value("User", {"mobile_no": mobile_number}, "name")
 		if not user:
 			return {"status": 0, "msg": "Mobile number not registered"}
-
 		auth_token, csrf_token = get_tokens()
 		if not auth_token or not csrf_token:
 			initiate_session()
