@@ -214,11 +214,10 @@
    "reqd": 1
   },
   {
-   "default": "0",
    "fieldname": "set_credit_limit",
    "fieldtype": "Select",
    "label": "Set Credit Limit",
-   "options": "0\n50000\n100000\n150000\n200000\n250000\n300000"
+   "options": "\n50000\n100000\n150000\n200000\n250000\n300000"
   },
   {
    "fieldname": "credit_score",
@@ -409,7 +408,7 @@
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2026-08-26 15:49:23.852059",
+ "modified": "2026-08-26 16:09:27.139172",
  "modified_by": "Administrator",
  "module": "Nomination",
  "name": "Nomination Form",
