@@ -98,9 +98,13 @@ def add_approver_rows(doc, approved_leaders):
 	validate, and set_approval_log stamps the current state's approver on every
 	save, which would overwrite whoever actually approved the previous stage.
 	"""
+	existing_labels = {row.name1 for row in doc.get(APPROVERS_TABLE) or []}
 	idx = len(doc.get(APPROVERS_TABLE) or [])
 
 	for leader in approved_leaders:
+		if leader["label"] in existing_labels:
+			continue
+
 		idx += 1
 		frappe.get_doc(
 			{
@@ -114,6 +118,7 @@ def add_approver_rows(doc, approved_leaders):
 				"verified_on": leader.get("verified_on"),
 			}
 		).insert(ignore_permissions=True)
+		existing_labels.add(leader["label"])
 
 
 def _role_from_approval_label(label, level=DEFAULT_LEVEL):
@@ -364,8 +369,16 @@ def approve_form(name, credit_limit):
 
 		level = STATE_APPROVAL_LEVEL.get(current_state)
 
-		# trust only the OTP verifications recorded server side, never the payload
-		approved_leaders = get_approved_leaders(level, name) if level else []
+		# trust only server-side OTP verifications, but count both cache entries
+		# and rows already written when the OTP was verified.
+		approved_leaders = []
+		if level:
+			approvals_by_role = {
+				leader["role"]: leader for leader in get_doc_approved_leaders(nomi_doc, level)
+			}
+			for leader in get_approved_leaders(level, name):
+				approvals_by_role[leader["role"]] = leader
+			approved_leaders = list(approvals_by_role.values())
 		if level and len(approved_leaders) < MIN_APPROVALS:
 			return {
 				"status": 0,
