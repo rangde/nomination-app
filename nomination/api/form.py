@@ -79,6 +79,7 @@ def get_nomination_form(name):
 	nomi_doc = frappe.get_doc("Nomination Form", name)
 
 	data = nomi_doc.as_dict()
+	data["approved_leaders"] = get_doc_approved_leaders(nomi_doc)
 
 	if data.get("aadhaar_number"):
 		data["aadhaar_number"] = mask_aadhaar(data["aadhaar_number"])
@@ -170,7 +171,7 @@ def set_doc_approver_rows(doc, approved_leaders, level=DEFAULT_LEVEL):
 
 def clear_doc_approvals(doc, level=DEFAULT_LEVEL):
 	set_doc_approver_rows(doc, [], level)
-	clear_approvals(level)
+	clear_approvals(level, doc.name)
 
 
 def _clean_mobile(value):
@@ -364,7 +365,7 @@ def approve_form(name, credit_limit):
 		level = STATE_APPROVAL_LEVEL.get(current_state)
 
 		# trust only the OTP verifications recorded server side, never the payload
-		approved_leaders = get_approved_leaders(level) if level else []
+		approved_leaders = get_approved_leaders(level, name) if level else []
 		if level and len(approved_leaders) < MIN_APPROVALS:
 			return {
 				"status": 0,
@@ -387,7 +388,7 @@ def approve_form(name, credit_limit):
 
 		# the cached approvals are spent once they are on the document
 		if level:
-			clear_approvals(level)
+			clear_approvals(level, name)
 
 		return {"status": 1, "msg": f"{name} Document has been moved to next workflow state"}
 
@@ -467,7 +468,7 @@ def submit_nomination(payload):
 
 	_set_nomination_values(doc, payload)
 
-	cache_approvals = get_approved_leaders()
+	cache_approvals = get_approved_leaders(DEFAULT_LEVEL, doc.name)
 	existing_approvals = get_doc_approved_leaders(doc)
 	approvals_by_role = {leader["role"]: leader for leader in existing_approvals}
 	for leader in cache_approvals:
@@ -490,7 +491,7 @@ def submit_nomination(payload):
 
 	_save_nomination_attachments(doc, payload)
 
-	clear_approvals()
+	clear_approvals(DEFAULT_LEVEL, doc.name)
 
 	return {"status": 1, "msg": doc.name}
 

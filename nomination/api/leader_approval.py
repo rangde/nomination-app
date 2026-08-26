@@ -29,12 +29,16 @@ def _clean_level(level):
 	return level if level in LEADER_LEVELS else None
 
 
-def _number_key(level, role):
-	return f"leader_otp_number_{frappe.session.user}_{level}_{role}"
+def _scope_name(nomination_name):
+	return (nomination_name or "").strip() or "__unsaved__"
 
 
-def _approved_key(level, role):
-	return f"leader_otp_approved_{frappe.session.user}_{level}_{role}"
+def _number_key(level, role, nomination_name=None):
+	return f"leader_otp_number_{frappe.session.user}_{_scope_name(nomination_name)}_{level}_{role}"
+
+
+def _approved_key(level, role, nomination_name=None):
+	return f"leader_otp_approved_{frappe.session.user}_{_scope_name(nomination_name)}_{level}_{role}"
 
 
 def _can_update_nomination(doc):
@@ -42,12 +46,21 @@ def _can_update_nomination(doc):
 	return doc.owner == frappe.session.user or "System Manager" in roles
 
 
-def _duplicate_role(level, role, mobile_number):
+def _can_record_approval(doc, level):
+	roles = set(frappe.get_roles(frappe.session.user))
+	if "System Manager" in roles:
+		return True
+	if level == DEFAULT_LEVEL:
+		return doc.owner == frappe.session.user
+	return level in roles
+
+
+def _duplicate_role(level, role, mobile_number, nomination_name=None):
 	"""Return the other role at this level already using this number, if any."""
 	for other in LEADER_ROLES:
 		if other == role:
 			continue
-		if frappe.cache().get_value(_number_key(level, other)) == mobile_number:
+		if frappe.cache().get_value(_number_key(level, other, nomination_name)) == mobile_number:
 			return other
 	return None
 
@@ -59,9 +72,9 @@ ROLE_LABELS = {
 }
 
 
-def _read_approval(level, role):
+def _read_approval(level, role, nomination_name=None):
 	"""Return the stored approval as a dict, tolerating an older bare number."""
-	raw = frappe.cache().get_value(_approved_key(level, role))
+	raw = frappe.cache().get_value(_approved_key(level, role, nomination_name))
 	if not raw:
 		return None
 
@@ -79,19 +92,19 @@ def _read_approval(level, role):
 	return {"mobile_number": raw, "verified_on": None}
 
 
-def get_approved_roles(level=DEFAULT_LEVEL):
+def get_approved_roles(level=DEFAULT_LEVEL, nomination_name=None):
 	"""Roles that completed OTP verification at this level in this session."""
 	level = _clean_level(level) or DEFAULT_LEVEL
-	return [role for role in LEADER_ROLES if _read_approval(level, role)]
+	return [role for role in LEADER_ROLES if _read_approval(level, role, nomination_name)]
 
 
-def get_approved_leaders(level=DEFAULT_LEVEL):
+def get_approved_leaders(level=DEFAULT_LEVEL, nomination_name=None):
 	"""Verified roles with the mobile number each one approved from."""
 	level = _clean_level(level) or DEFAULT_LEVEL
 	leaders = []
 
 	for role in LEADER_ROLES:
-		approval = _read_approval(level, role)
+		approval = _read_approval(level, role, nomination_name)
 		if not approval:
 			continue
 
@@ -111,20 +124,27 @@ def get_approved_leaders(level=DEFAULT_LEVEL):
 	return leaders
 
 
-def record_draft_leader_approval(nomination_name, level, role, mobile_number, verified_on):
+APPROVAL_WORKFLOW_STATE = {
+	"SHG": "Draft",
+	"VO": "SHG Proposed",
+	"CLF": "VO Approved",
+}
+
+
+def record_leader_approval(nomination_name, level, role, mobile_number, verified_on):
 	if not nomination_name:
 		return
 
 	level = _clean_level(level)
 	role = _clean_role(role)
-	if level != DEFAULT_LEVEL or not role:
+	if not level or not role:
 		return
 
 	if not frappe.db.exists("Nomination Form", nomination_name):
 		return
 
 	doc = frappe.get_doc("Nomination Form", nomination_name)
-	if doc.workflow_state != "Draft" or not _can_update_nomination(doc):
+	if doc.workflow_state != APPROVAL_WORKFLOW_STATE.get(level) or not _can_record_approval(doc, level):
 		return
 
 	role_label = ROLE_LABELS.get(role, role.title())
@@ -147,15 +167,15 @@ def record_draft_leader_approval(nomination_name, level, role, mobile_number, ve
 	doc.save(ignore_permissions=True)
 
 
-def clear_approvals(level=DEFAULT_LEVEL):
+def clear_approvals(level=DEFAULT_LEVEL, nomination_name=None):
 	level = _clean_level(level) or DEFAULT_LEVEL
 	for role in LEADER_ROLES:
-		frappe.cache().delete_value(_number_key(level, role))
-		frappe.cache().delete_value(_approved_key(level, role))
+		frappe.cache().delete_value(_number_key(level, role, nomination_name))
+		frappe.cache().delete_value(_approved_key(level, role, nomination_name))
 
 
 @frappe.whitelist()
-def send_leader_otp(mobile_number, role, level=DEFAULT_LEVEL):
+def send_leader_otp(mobile_number, role, level=DEFAULT_LEVEL, nomination_name=None):
 	if frappe.session.user == "Guest":
 		return {"status": 0, "msg": "Not logged in"}
 
@@ -171,7 +191,7 @@ def send_leader_otp(mobile_number, role, level=DEFAULT_LEVEL):
 	if not mobile_number:
 		return {"status": 0, "msg": "Please enter a valid 10-digit mobile number"}
 
-	duplicate = _duplicate_role(level, role, mobile_number)
+	duplicate = _duplicate_role(level, role, mobile_number, nomination_name)
 	if duplicate:
 		return {
 			"status": 0,
@@ -179,8 +199,10 @@ def send_leader_otp(mobile_number, role, level=DEFAULT_LEVEL):
 			"Each leader needs a different mobile number",
 		}
 
-	frappe.cache().set_value(_number_key(level, role), mobile_number, expires_in_sec=APPROVAL_TTL_SEC)
-	frappe.cache().delete_value(_approved_key(level, role))
+	frappe.cache().set_value(
+		_number_key(level, role, nomination_name), mobile_number, expires_in_sec=APPROVAL_TTL_SEC
+	)
+	frappe.cache().delete_value(_approved_key(level, role, nomination_name))
 
 	send_otp_internal(mobile_number)
 
@@ -204,10 +226,10 @@ def verify_leader_otp(mobile_number, otp, role, level=DEFAULT_LEVEL, nomination_
 	if not mobile_number:
 		return {"status": 0, "msg": "Please enter a valid 10-digit mobile number"}
 
-	if frappe.cache().get_value(_number_key(level, role)) != mobile_number:
+	if frappe.cache().get_value(_number_key(level, role, nomination_name)) != mobile_number:
 		return {"status": 0, "msg": "Please request an OTP for this number first"}
 
-	duplicate = _duplicate_role(level, role, mobile_number)
+	duplicate = _duplicate_role(level, role, mobile_number, nomination_name)
 	if duplicate:
 		return {
 			"status": 0,
@@ -231,23 +253,23 @@ def verify_leader_otp(mobile_number, otp, role, level=DEFAULT_LEVEL, nomination_
 	verified_on = now()
 
 	frappe.cache().set_value(
-		_approved_key(level, role),
+		_approved_key(level, role, nomination_name),
 		json.dumps({"mobile_number": mobile_number, "verified_on": verified_on}),
 		expires_in_sec=APPROVAL_TTL_SEC,
 	)
 
-	record_draft_leader_approval(nomination_name, level, role, mobile_number, verified_on)
+	record_leader_approval(nomination_name, level, role, mobile_number, verified_on)
 
 	return {
 		"status": 1,
 		"msg": "OTP verified successfully",
 		"verified_on": verified_on,
-		"approved_leaders": get_approved_roles(level),
+		"approved_leaders": get_approved_leaders(level, nomination_name),
 	}
 
 
 @frappe.whitelist()
-def get_leader_approvals(level=DEFAULT_LEVEL):
+def get_leader_approvals(level=DEFAULT_LEVEL, nomination_name=None):
 	if frappe.session.user == "Guest":
 		return {"status": 0, "msg": "Not logged in"}
 
@@ -255,4 +277,4 @@ def get_leader_approvals(level=DEFAULT_LEVEL):
 	if not level:
 		return {"status": 0, "msg": "Invalid approval level"}
 
-	return {"status": 1, "msg": get_approved_roles(level)}
+	return {"status": 1, "msg": get_approved_leaders(level, nomination_name)}
