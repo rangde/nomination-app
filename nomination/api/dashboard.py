@@ -5,6 +5,15 @@ from nomination.api.rangde_service import get_metrics
 
 dashboard_access = {"System Manager", "Read only"}
 
+DASHBOARD_STAGE_FILTERS = {
+	"all": None,
+	"shg_approved": "SHG Proposed",
+	"vo_pending": "SHG Proposed",
+	"vo_approved": "VO Approved",
+	"clf_pending": "VO Approved",
+	"clf_approved": "CLF Approved",
+}
+
 
 def _user_sees_all_nominations(user: str) -> bool:
 	roles = set(frappe.get_roles(user))
@@ -26,7 +35,7 @@ def _get_subordinate_users(manager: str) -> set[str]:
 	subordinates: set[str] = set()
 	queue = [manager]
 	while queue:
-		current = queue.popleft(0)
+		current = queue.pop(0)
 		for child in children_map.get(current, []):
 			if child not in subordinates:
 				subordinates.add(child)
@@ -54,6 +63,29 @@ def _nomination_owner_scope_for_session() -> set[str] | None:
 		return None
 
 	return _get_subordinate_users(user)
+
+
+def _list_filters(stage_key: str, owners: set[str] | None, vo: str | None = None, shg: str | None = None):
+	if stage_key not in DASHBOARD_STAGE_FILTERS:
+		frappe.throw(frappe._("Invalid dashboard stage selected."))
+
+	workflow_state = DASHBOARD_STAGE_FILTERS.get(stage_key)
+	filters = {}
+
+	if workflow_state:
+		filters["workflow_state"] = workflow_state
+
+	if owners is not None:
+		if not owners:
+			return None
+		filters["owner"] = ["in", list(owners)]
+
+	if vo:
+		filters["name_of_the_vo"] = vo
+	if shg:
+		filters["name_of_the_shg"] = shg
+
+	return filters
 
 
 def get_nominations(
@@ -138,5 +170,109 @@ def get_dashboard_metrics():
 			"loan_disbursed": metrics.get("numDisbursedLoans"),
 			"amount_disbursed": metrics.get("amountDisbursed"),
 			"median_days": metrics.get("medianDaysToDisbursal"),
+		},
+	}
+
+
+@frappe.whitelist()
+def get_dashboard_nomination_rows(
+	stage_key,
+	page=1,
+	page_size=10,
+	search=None,
+	vo=None,
+	shg=None,
+	sort_by="modified",
+):
+	owners = _nomination_owner_scope_for_session()
+	filters = _list_filters(stage_key, owners, vo, shg)
+	if filters is None:
+		return {
+			"status": 1,
+			"msg": {
+				"rows": [],
+				"total": 0,
+				"page": 1,
+				"page_size": page_size,
+				"vos": [],
+				"shgs": [],
+			},
+		}
+
+	try:
+		page = max(int(page), 1)
+	except (TypeError, ValueError):
+		page = 1
+
+	try:
+		page_size = min(max(int(page_size), 1), 2500)
+	except (TypeError, ValueError):
+		page_size = 20
+
+	search = (search or "").strip()
+	or_filters = []
+	if search:
+		like = f"%{search}%"
+		or_filters = [
+			["Nomination Form", "first_name", "like", like],
+			["Nomination Form", "last_name", "like", like],
+			["Nomination Form", "townvillage", "like", like],
+			["Nomination Form", "name_of_the_shg", "like", like],
+			["Nomination Form", "name_of_the_vo", "like", like],
+		]
+
+	order_by = "creation desc" if sort_by == "created" else "modified desc"
+	fields = [
+		"name",
+		"first_name",
+		"last_name",
+		"townvillage",
+		"name_of_the_shg",
+		"name_of_the_vo",
+		"workflow_state",
+		"creation",
+		"modified",
+		"photo_of_didi",
+	]
+
+	total = len(
+		frappe.get_all(
+			"Nomination Form",
+			filters=filters,
+			or_filters=or_filters,
+			pluck="name",
+		)
+	)
+	rows = frappe.get_all(
+		"Nomination Form",
+		fields=fields,
+		filters=filters,
+		or_filters=or_filters,
+		order_by=order_by,
+		limit_start=(page - 1) * page_size,
+		limit_page_length=page_size,
+	)
+
+	option_filters = dict(filters)
+	option_filters.pop("name_of_the_vo", None)
+	option_filters.pop("name_of_the_shg", None)
+	option_rows = frappe.get_all(
+		"Nomination Form",
+		fields=["name_of_the_vo", "name_of_the_shg"],
+		filters=option_filters,
+		or_filters=or_filters,
+	)
+	vos = sorted({row.name_of_the_vo for row in option_rows if row.name_of_the_vo})
+	shgs = sorted({row.name_of_the_shg for row in option_rows if row.name_of_the_shg})
+
+	return {
+		"status": 1,
+		"msg": {
+			"rows": rows,
+			"total": total,
+			"page": page,
+			"page_size": page_size,
+			"vos": vos,
+			"shgs": shgs,
 		},
 	}
