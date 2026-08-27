@@ -6,36 +6,45 @@ frappe.pages["clf-dashboard"].on_page_load = function (wrapper) {
 	});
 
 	page.main.html(`
-		<div id="abhilasha-dashboard">
+		<div id="clf-dashboard-root">
+			<div class="abh-bg-glow abh-bg-glow-one" aria-hidden="true"></div>
+			<div class="abh-bg-glow abh-bg-glow-two" aria-hidden="true"></div>
+			<div class="abh-bg-glow abh-bg-glow-three" aria-hidden="true"></div>
 			<div class="abh-shell">
 				<header class="abh-header">
-					<div>
-						<div class="abh-kicker" data-i18n="kicker">CLF Overview</div>
+					<button class="abh-header-back" type="button" data-action="back-dashboard">
+						<span aria-hidden="true">←</span>
+						<span data-i18n="back_dashboard">Dashboard</span>
+					</button>
+					<div class="abh-brand">
+						<div class="abh-brand-mark" aria-hidden="true">अ</div>
 						<h1 data-i18n="title">CLF Dashboard</h1>
-						<p data-i18n="subtitle">Track nomination, training and loan progress from one view.</p>
 					</div>
 					<div class="abh-actions">
-						<div class="abh-lang" role="group" aria-label="Language">
-							<button data-lang="hi">HI</button>
-							<button class="active" data-lang="en">EN</button>
-						</div>
 						<button class="abh-refresh" type="button" data-action="refresh">
 							<span class="abh-refresh-icon">↻</span>
-							<span data-i18n="refresh">Refresh</span>
+							<span>
+								<strong data-i18n="refresh">Refresh</strong>
+								<small id="abh-header-updated">-</small>
+							</span>
 						</button>
+						<div class="abh-lang" role="group" aria-label="Language">
+							<button data-lang="hi">हिंदी</button>
+							<button class="active" data-lang="en">English</button>
+						</div>
 					</div>
 				</header>
 
 				<div id="abh-dashboard-view">
 					<section class="abh-overview">
 						<div>
-							<div class="abh-section-label" data-i18n="overview_title">At a glance</div>
-							<p data-i18n="overview_body">Follow each didi from nomination approval to training and loan readiness.</p>
+							<h2 data-i18n="overview_title">Dashboard — At a Glance</h2>
+							<p data-i18n="overview_body">The same didi moves through all three stages: nomination, training, then loan. Tap any number to follow her.</p>
 						</div>
-						<div class="abh-updated">
-							<span data-i18n="last_updated">Last updated</span>
-							<strong id="abh-last-updated">-</strong>
-						</div>
+						<button class="abh-browse" type="button" data-action="browse-village">
+							<span aria-hidden="true">⌾</span>
+							<span data-i18n="browse_village">Browse all didis by village</span>
+						</button>
 					</section>
 
 					<section class="abh-section abh-flow-section">
@@ -50,9 +59,9 @@ frappe.pages["clf-dashboard"].on_page_load = function (wrapper) {
 
 					<div class="abh-connector" id="abh-connector-training"></div>
 
-					<section class="abh-section">
+					<section class="abh-section abh-training-section">
 						<div class="abh-section-head">
-							<span class="abh-dot green"></span>
+							<span class="abh-dot green">${clf_dashboard.icon("training_stage")}</span>
 							<h2 data-i18n="training_heading">Training & Assessment</h2>
 						</div>
 						<div id="abh-training" class="abh-metric-grid"></div>
@@ -60,9 +69,9 @@ frappe.pages["clf-dashboard"].on_page_load = function (wrapper) {
 
 					<div class="abh-connector" id="abh-connector-loan"></div>
 
-					<section class="abh-section">
+					<section class="abh-section abh-loan-section">
 						<div class="abh-section-head">
-							<span class="abh-dot amber"></span>
+							<span class="abh-dot amber">${clf_dashboard.icon("loan_stage")}</span>
 							<h2 data-i18n="loan_heading">Loan Process</h2>
 						</div>
 						<div id="abh-loan" class="abh-metric-grid"></div>
@@ -71,29 +80,30 @@ frappe.pages["clf-dashboard"].on_page_load = function (wrapper) {
 
 				<div id="abh-list-view" style="display:none"></div>
 				<div id="abh-detail-modal" style="display:none"></div>
+				<div id="abh-filter-sheet" style="display:none"></div>
 			</div>
 		</div>
 	`);
 
-	add_abhilasha_dashboard_style();
-	abhilasha_dashboard.bind_events();
-	abhilasha_dashboard.apply_route_state();
-	abhilasha_dashboard.load();
-	abhilasha_dashboard.interval = setInterval(() => abhilasha_dashboard.load(), 30000);
+	add_clf_dashboard_style();
+	clf_dashboard.bind_events();
+	clf_dashboard.apply_route_state();
+	clf_dashboard.load();
+	clf_dashboard.interval = setInterval(() => clf_dashboard.load(), 30000);
 
 	$(wrapper).on("remove", () => {
-		clearInterval(abhilasha_dashboard.interval);
-		$(document).off("click.abhilasha-dashboard");
+		clearInterval(clf_dashboard.interval);
+		$(document).off("click.clf-dashboard-root");
 	});
 };
 
 frappe.pages["clf-dashboard"].on_page_show = function () {
-	if ($("#abhilasha-dashboard").length) {
-		abhilasha_dashboard.apply_route_state();
+	if ($("#clf-dashboard-root").length) {
+		clf_dashboard.apply_route_state();
 	}
 };
 
-const abhilasha_dashboard = {
+const clf_dashboard = {
 	lang: "en",
 	interval: null,
 	data: null,
@@ -103,6 +113,7 @@ const abhilasha_dashboard = {
 	pageSize: 20,
 	pageSizeOptions: [20, 100, 500, 2500],
 	stageKeys: ["all", "shg_approved", "vo_pending", "vo_approved", "clf_pending", "clf_approved"],
+	counterFrame: null,
 	search: "",
 	vo: "",
 	shg: "",
@@ -115,9 +126,10 @@ const abhilasha_dashboard = {
 			title: "CLF Dashboard",
 			subtitle: "Track nomination, training and loan progress from one view.",
 			refresh: "Refresh",
-			overview_title: "At a glance",
+			overview_title: "Dashboard — At a Glance",
 			overview_body:
-				"Follow each didi from nomination approval to training and loan readiness.",
+				"The same didi moves through all three stages: nomination, training, then loan. Tap any number to follow her.",
+			browse_village: "Browse all didis by village",
 			last_updated: "Last updated",
 			nomination_heading: "Nomination Flow",
 			training_heading: "Training & Assessment",
@@ -135,12 +147,14 @@ const abhilasha_dashboard = {
 			loan_disbursed: "Loan Disbursed",
 			amount_disbursed: "Amount Disbursed",
 			median_days: "Median Days",
-			training_connector: "{0} CLF-approved didis have entered training.",
-			loan_connector: "{0} didis received loans worth {1}.",
+			training_connector: "{0} of {1} CLF-approved didis have entered training",
+			loan_connector: "{0} of {1} didis who passed have received a loan",
 			open_list: "Open list",
+			view_details: "View details",
 			unavailable: "Not available",
 			back_dashboard: "Dashboard",
 			all: "All",
+			all_nomination: "All Nomination",
 			nomination_tab: "Nomination",
 			training_tab: "Training & Assessment",
 			loan_tab: "Loan Process",
@@ -172,6 +186,7 @@ const abhilasha_dashboard = {
 			refresh: "रिफ्रेश",
 			overview_title: "एक नज़र में",
 			overview_body: "हर दीदी की यात्रा नामांकन मंजूरी से प्रशिक्षण और लोन तक देखें।",
+			browse_village: "गाँव के अनुसार सभी दीदी देखें",
 			last_updated: "अंतिम अपडेट",
 			nomination_heading: "नामांकन फ्लो",
 			training_heading: "प्रशिक्षण और मूल्यांकन",
@@ -189,12 +204,14 @@ const abhilasha_dashboard = {
 			loan_disbursed: "लोन दिए गए",
 			amount_disbursed: "कुल राशि",
 			median_days: "औसत दिन",
-			training_connector: "{0} CLF-स्वीकृत दीदी प्रशिक्षण में हैं।",
-			loan_connector: "{0} दीदी को {1} का लोन मिला।",
+			training_connector: "{1} CLF-स्वीकृत में से {0} दीदी प्रशिक्षण में हैं।",
+			loan_connector: "पास हुई {1} में से {0} दीदी को लोन मिला।",
 			open_list: "सूची खोलें",
+			view_details: "विवरण देखें",
 			unavailable: "उपलब्ध नहीं",
 			back_dashboard: "डैशबोर्ड",
 			all: "सभी",
+			all_nomination: "सभी नामांकन",
 			nomination_tab: "नामांकन",
 			training_tab: "प्रशिक्षण और मूल्यांकन",
 			loan_tab: "लोन प्रक्रिया",
@@ -226,42 +243,47 @@ const abhilasha_dashboard = {
 	},
 
 	bind_events() {
-		$("#abhilasha-dashboard").on("click", "[data-lang]", (event) => {
+		$("#clf-dashboard-root").on("click", "[data-lang]", (event) => {
 			this.lang = $(event.currentTarget).data("lang");
-			$("#abhilasha-dashboard [data-lang]").removeClass("active");
+			$("#clf-dashboard-root [data-lang]").removeClass("active");
 			$(event.currentTarget).addClass("active");
 			this.render_current_view();
 		});
 
-		$("#abhilasha-dashboard").on("click", "[data-action='refresh']", () => this.load(true));
+		$("#clf-dashboard-root").on("click", "[data-action='refresh']", () => this.load(true));
 
-		$("#abhilasha-dashboard").on("click", ".abh-flow-step", (event) => {
+		$("#clf-dashboard-root").on("click", "[data-action='browse-village']", () =>
+			this.open_list("all")
+		);
+
+		$("#clf-dashboard-root").on("click", ".abh-flow-step", (event) => {
 			event.preventDefault();
 			this.open_list($(event.currentTarget).data("stage"));
 		});
 
-		$("#abhilasha-dashboard").on("click", "[data-action='back-dashboard']", () => {
+		$("#clf-dashboard-root").on("click", "[data-action='back-dashboard']", () => {
+			if (this.view !== "list") return;
 			this.view = "dashboard";
+			$("#clf-dashboard-root").removeClass("abh-list-mode");
 			$("#abh-list-view").hide();
 			$("#abh-dashboard-view").show();
 			this.update_dashboard_route();
 			this.render();
 		});
 
-		$("#abhilasha-dashboard").on("click", "[data-stage-tab]", (event) => {
+		$("#clf-dashboard-root").on("click", "[data-stage-tab]", (event) => {
 			this.stageKey = $(event.currentTarget).data("stage-tab");
 			this.page = 1;
 			this.load_list();
 		});
 
-		$("#abhilasha-dashboard").on("click", "[data-dropdown-toggle]", (event) => {
+		$("#clf-dashboard-root").on("click", "[data-sheet-toggle]", (event) => {
 			event.stopPropagation();
-			const $wrap = $(event.currentTarget).closest(".abh-select-wrap");
-			$("#abhilasha-dashboard .abh-select-wrap").not($wrap).removeClass("open");
-			$wrap.toggleClass("open");
+			const type = $(event.currentTarget).data("sheet-toggle");
+			this.open_filter_sheet(type);
 		});
 
-		$("#abhilasha-dashboard").on("click", "[data-dropdown-option]", (event) => {
+		$("#clf-dashboard-root").on("click", "[data-dropdown-option]", (event) => {
 			event.stopPropagation();
 			const type = $(event.currentTarget).data("dropdown-type");
 			const value = String($(event.currentTarget).data("value") || "");
@@ -272,46 +294,52 @@ const abhilasha_dashboard = {
 				this[type] = value;
 			}
 
-			$("#abhilasha-dashboard .abh-select-wrap").removeClass("open");
+			this.close_filter_sheet();
 			this.page = 1;
 			this.load_list();
 		});
 
-		$(document).on("click.abhilasha-dashboard", () => {
-			$("#abhilasha-dashboard .abh-select-wrap").removeClass("open");
-		});
+		$("#clf-dashboard-root").on(
+			"click",
+			"[data-action='close-filter-sheet'], .abh-sheet-backdrop",
+			() => this.close_filter_sheet()
+		);
 
-		$("#abhilasha-dashboard").on("input", "[data-filter='search']", (event) => {
+		$("#clf-dashboard-root").on("click", ".abh-sheet-panel", (event) =>
+			event.stopPropagation()
+		);
+
+		$("#clf-dashboard-root").on("input", "[data-filter='search']", (event) => {
 			this.search = event.currentTarget.value;
 			this.page = 1;
 			clearTimeout(this.searchTimer);
 			this.searchTimer = setTimeout(() => this.load_list(), 250);
 		});
 
-		$("#abhilasha-dashboard").on("click", "[data-sort]", (event) => {
+		$("#clf-dashboard-root").on("click", "[data-sort]", (event) => {
 			this.sortBy = $(event.currentTarget).data("sort");
 			this.page = 1;
 			this.load_list();
 		});
 
-		$("#abhilasha-dashboard").on("click", "[data-page]", (event) => {
+		$("#clf-dashboard-root").on("click", "[data-page]", (event) => {
 			this.page = Number($(event.currentTarget).data("page"));
 			this.load_list();
 		});
 
-		$("#abhilasha-dashboard").on("click", "[data-page-size]", (event) => {
+		$("#clf-dashboard-root").on("click", "[data-page-size]", (event) => {
 			this.pageSize = Number($(event.currentTarget).data("page-size"));
 			this.page = 1;
 			this.load_list();
 		});
 
-		$("#abhilasha-dashboard").on("click", ".abh-list-card", (event) => {
+		$("#clf-dashboard-root").on("click", ".abh-list-card", (event) => {
 			const name = $(event.currentTarget).data("name");
 			const row = this.listData.rows.find((item) => item.name === name);
 			if (row) this.open_modal(row);
 		});
 
-		$("#abhilasha-dashboard").on(
+		$("#clf-dashboard-root").on(
 			"click",
 			"[data-action='close-modal'], .abh-modal-backdrop",
 			() => {
@@ -319,13 +347,14 @@ const abhilasha_dashboard = {
 			}
 		);
 
-		$("#abhilasha-dashboard").on("click", ".abh-modal-card", (event) =>
+		$("#clf-dashboard-root").on("click", ".abh-modal-card", (event) =>
 			event.stopPropagation()
 		);
 	},
 
 	open_list(stageKey) {
 		this.view = "list";
+		$("#clf-dashboard-root").addClass("abh-list-mode");
 		this.stageKey = this.normalize_stage(stageKey) || "shg_approved";
 		this.page = 1;
 		this.search = "";
@@ -335,6 +364,48 @@ const abhilasha_dashboard = {
 		$("#abh-dashboard-view").hide();
 		$("#abh-list-view").show();
 		this.load_list();
+	},
+
+	open_filter_sheet(type) {
+		const config = this.filter_sheet_config(type);
+		if (!config) return;
+
+		$("#abh-filter-sheet")
+			.html(
+				`
+			<div class="abh-sheet-backdrop">
+				<div class="abh-sheet-panel" role="dialog" aria-modal="true">
+					<div class="abh-sheet-head">
+						<h2>${frappe.utils.escape_html(config.title)}</h2>
+						<button type="button" data-action="close-filter-sheet">×</button>
+					</div>
+					<div class="abh-sheet-options">
+						${config.options
+							.map((option) => {
+								const active =
+									String(option.value) === String(config.selected || "");
+								return `<button class="abh-sheet-option ${
+									active ? "active" : ""
+								}" type="button" data-dropdown-type="${frappe.utils.escape_html(
+									type
+								)}" data-dropdown-option data-value="${frappe.utils.escape_html(
+									option.value
+								)}">
+									<span class="abh-sheet-dot ${this.option_tone(option.value)} ${active ? "active" : ""}"></span>
+									<span>${frappe.utils.escape_html(option.label)}</span>
+									<span class="abh-sheet-check" aria-hidden="true">✓</span>
+								</button>`;
+							})
+							.join("")}
+					</div>
+				</div>
+			</div>`
+			)
+			.show();
+	},
+
+	close_filter_sheet() {
+		$("#abh-filter-sheet").hide().empty();
 	},
 
 	load_list() {
@@ -373,18 +444,18 @@ const abhilasha_dashboard = {
 	},
 
 	load(spin) {
-		if (spin) $("#abhilasha-dashboard .abh-refresh-icon").addClass("spinning");
+		if (spin) $("#clf-dashboard-root .abh-refresh-icon").addClass("spinning");
 
 		frappe.call({
 			method: "nomination.api.dashboard.get_dashboard_metrics",
 			callback: (r) => {
-				$("#abhilasha-dashboard .abh-refresh-icon").removeClass("spinning");
+				$("#clf-dashboard-root .abh-refresh-icon").removeClass("spinning");
 				if (!r.message) return;
 				this.data = r.message;
 				this.render();
 			},
 			error: () => {
-				$("#abhilasha-dashboard .abh-refresh-icon").removeClass("spinning");
+				$("#clf-dashboard-root .abh-refresh-icon").removeClass("spinning");
 				frappe.msgprint(__("Unable to load dashboard metrics."));
 			},
 		});
@@ -394,10 +465,12 @@ const abhilasha_dashboard = {
 		this.apply_labels();
 		if (!this.data) return;
 
-		$("#abh-last-updated").text(this.format_time(new Date()));
+		const updatedAt = this.format_time(new Date());
+		$("#abh-header-updated").text(updatedAt);
 		this.render_nomination(this.data.nomination || {});
 		this.render_training(this.data.training || {});
 		this.render_loan(this.data.loan || {});
+		this.animate_counters();
 	},
 
 	render_current_view() {
@@ -420,6 +493,7 @@ const abhilasha_dashboard = {
 		this.vo = state.vo;
 		this.shg = state.shg;
 		this.sortBy = state.sortBy;
+		$("#clf-dashboard-root").addClass("abh-list-mode");
 		$("#abh-dashboard-view").hide();
 		$("#abh-list-view").show();
 		this.load_list();
@@ -500,7 +574,7 @@ const abhilasha_dashboard = {
 	},
 
 	apply_labels() {
-		$("#abhilasha-dashboard [data-i18n]").each((_, el) => {
+		$("#clf-dashboard-root [data-i18n]").each((_, el) => {
 			const key = $(el).data("i18n");
 			$(el).text(this.t(key));
 		});
@@ -532,9 +606,12 @@ const abhilasha_dashboard = {
 		const total = this.num(data.total_registered);
 		const entered = this.num(data.under_training);
 		const passed = this.num(data.passed);
+		const clfApproved = this.num(this.data?.nomination?.clf_approved);
 
 		$("#abh-connector-training").text(
-			this.t("training_connector").replace("{0}", this.format_number(entered || total))
+			this.t("training_connector")
+				.replace("{0}", this.format_number(entered || total))
+				.replace("{1}", this.format_number(clfApproved))
 		);
 
 		$("#abh-training").html(
@@ -550,11 +627,12 @@ const abhilasha_dashboard = {
 	render_loan(data) {
 		const disbursed = this.num(data.loan_disbursed);
 		const amount = this.money(data.amount_disbursed);
+		const passed = this.num(this.data?.training?.passed);
 
 		$("#abh-connector-loan").text(
 			this.t("loan_connector")
 				.replace("{0}", this.format_number(disbursed))
-				.replace("{1}", amount)
+				.replace("{1}", this.format_number(passed))
 		);
 
 		$("#abh-loan").html(
@@ -578,12 +656,14 @@ const abhilasha_dashboard = {
 		$("#abh-list-view").html(`
 			<div class="abh-list-page">
 				<div class="abh-list-top">
-					<button class="abh-back-btn" type="button" data-action="back-dashboard">← ${frappe.utils.escape_html(
-						this.t("back_dashboard")
-					)}</button>
-					<div class="abh-list-total"><strong>${this.format_number(
-						total
-					)}</strong><span>${frappe.utils.escape_html(this.t("didis"))}</span></div>
+					<div class="abh-list-summary">
+						<div class="abh-list-total"><strong>${this.format_number(
+							total
+						)}</strong><span>${frappe.utils.escape_html(this.t("didis"))}</span></div>
+						<div class="abh-page-size abh-page-size-top">
+							${this.page_size_buttons()}
+						</div>
+					</div>
 				</div>
 
 				<h1 class="abh-list-title">${frappe.utils.escape_html(title)}</h1>
@@ -606,9 +686,6 @@ const abhilasha_dashboard = {
 						<button class="abh-tab" type="button" disabled>${frappe.utils.escape_html(
 							this.t("loan_tab")
 						)}</button>
-					</div>
-					<div class="abh-page-size abh-page-size-top">
-						${this.page_size_buttons()}
 					</div>
 				</div>
 
@@ -646,7 +723,7 @@ const abhilasha_dashboard = {
 				<div class="abh-card-grid">
 					${
 						rows.length
-							? rows.map((row) => this.list_card(row)).join("")
+							? rows.map((row, index) => this.list_card(row, index)).join("")
 							: `<div class="abh-empty">${frappe.utils.escape_html(
 									this.t("no_records")
 							  )}</div>`
@@ -683,18 +760,8 @@ const abhilasha_dashboard = {
 	},
 
 	stage_select() {
-		const options = [
-			"all",
-			"shg_approved",
-			"vo_pending",
-			"vo_approved",
-			"clf_pending",
-			"clf_approved",
-		].map((key) => ({
-			value: key,
-			label: this.t(key),
-		}));
-		return this.custom_select("stage", this.t(this.stageKey), options, this.stageKey);
+		const config = this.filter_sheet_config("stage");
+		return this.custom_select("stage", this.t(this.stageKey), config.options, this.stageKey);
 	},
 
 	option_select(key, placeholder, options, selected) {
@@ -706,52 +773,96 @@ const abhilasha_dashboard = {
 		return this.custom_select(key, label, items, selected);
 	},
 
+	filter_sheet_config(type) {
+		if (type === "stage") {
+			return {
+				title: this.lang === "hi" ? "स्थिति चुनें" : "Choose Status",
+				selected: this.stageKey,
+				options: ["all", "shg_approved", "vo_approved", "clf_approved"].map((key) => ({
+					value: key,
+					label: key === "all" ? this.t("all_nomination") : this.t(key),
+				})),
+			};
+		}
+
+		if (type === "vo") {
+			return {
+				title: this.t("all_vos"),
+				selected: this.vo,
+				options: [
+					{ value: "", label: this.t("all_vos") },
+					...(this.listData.vos || []).map((option) => ({
+						value: option,
+						label: option,
+					})),
+				],
+			};
+		}
+
+		if (type === "shg") {
+			return {
+				title: this.t("all_shgs"),
+				selected: this.shg,
+				options: [
+					{ value: "", label: this.t("all_shgs") },
+					...(this.listData.shgs || []).map((option) => ({
+						value: option,
+						label: option,
+					})),
+				],
+			};
+		}
+
+		return null;
+	},
+
+	option_tone(value) {
+		if (value === "shg_approved" || value === "vo_approved") return "blue";
+		if (value === "clf_approved") return "green";
+		return "";
+	},
+
 	custom_select(type, label, options, selected) {
 		return `
 			<div class="abh-select-wrap">
-				<button class="abh-select-btn" type="button" data-dropdown-toggle>
+				<button class="abh-select-btn" type="button" data-sheet-toggle="${frappe.utils.escape_html(type)}">
 					<span>${frappe.utils.escape_html(label)}</span>
 					<i aria-hidden="true"></i>
 				</button>
-				<div class="abh-select-menu" role="listbox">
-					${options
-						.map((option) => {
-							const active = String(option.value) === String(selected || "");
-							return `<button class="abh-select-option ${
-								active ? "active" : ""
-							}" type="button" role="option" aria-selected="${active}" data-dropdown-type="${frappe.utils.escape_html(
-								type
-							)}" data-dropdown-option data-value="${frappe.utils.escape_html(
-								option.value
-							)}">${frappe.utils.escape_html(option.label)}</button>`;
-						})
-						.join("")}
-				</div>
 			</div>`;
 	},
 
-	list_card(row) {
+	list_card(row, index = 0) {
 		const name = this.full_name(row);
 		const updated = this.date_label(row.modified);
 		const statusKey = this.row_status_key(row);
+		const stageLabel = this.t("nomination_tab");
+		const stageIcon = this.icon("nomination_stage");
+		const delayMs = Math.min(index, 11) * 35;
 		return `
-			<button class="abh-list-card" type="button" data-name="${frappe.utils.escape_html(row.name)}">
+			<button class="abh-list-card" type="button" style="--abh-card-delay:${delayMs}ms" data-name="${frappe.utils.escape_html(
+			row.name
+		)}">
 				<div class="abh-card-main">
 					<div>
 						<h3>${frappe.utils.escape_html(name)}</h3>
-						<div class="abh-village">⌂ ${frappe.utils.escape_html(row.townvillage || "-")}</div>
+						<div class="abh-village">${this.icon("home")} ${frappe.utils.escape_html(
+			row.townvillage || "-"
+		)}</div>
 					</div>
 					${this.avatar(row)}
 				</div>
 				<div class="abh-card-kicker">${frappe.utils.escape_html(this.t("stage"))}</div>
-				<div class="abh-card-stage"><span class="abh-mini-chart">▥</span>${frappe.utils.escape_html(
-					this.t("nomination_tab")
-				)}</div>
+				<div class="abh-card-stage"><span class="abh-mini-chart">${stageIcon}</span>${frappe.utils.escape_html(
+			stageLabel
+		)}</div>
 				<div class="abh-card-kicker">${frappe.utils.escape_html(this.t("status"))}</div>
 				<div class="abh-status-pill"><span></span>${frappe.utils.escape_html(this.t(statusKey))}</div>
 				<div class="abh-card-footer">
-					<strong>◷ ${frappe.utils.escape_html(updated)}</strong>
-					<span>${frappe.utils.escape_html(this.t("last_updated_card"))}</span>
+					<div>
+						<strong>${this.icon("median_days")} ${frappe.utils.escape_html(updated)}</strong>
+						<span>${frappe.utils.escape_html(this.t("last_updated_card"))}</span>
+					</div>
 				</div>
 			</button>`;
 	},
@@ -797,12 +908,18 @@ const abhilasha_dashboard = {
 	},
 
 	modal_section(titleKey, chipKey, pairs, active) {
+		const iconKey =
+			titleKey === "training_tab"
+				? "training_stage"
+				: titleKey === "loan_tab"
+				? "loan_stage"
+				: "nomination_stage";
 		return `
 			<div class="abh-modal-section ${active ? "active" : ""}">
 				<div class="abh-modal-section-head">
-					<div class="abh-card-stage"><span class="abh-mini-chart">▥</span>${frappe.utils.escape_html(
-						this.t(titleKey)
-					)}</div>
+					<div class="abh-card-stage"><span class="abh-mini-chart">${this.icon(
+						iconKey
+					)}</span>${frappe.utils.escape_html(this.t(titleKey))}</div>
 					<div class="abh-status-pill ${active ? "" : "muted"}">${frappe.utils.escape_html(
 			this.t(chipKey)
 		)}</div>
@@ -865,28 +982,101 @@ const abhilasha_dashboard = {
 
 	nomination_card(label_key, value, tone, filters) {
 		const href = `/app/nomination-form?filters=${encodeURIComponent(JSON.stringify(filters))}`;
+		const target = this.num(value);
 		return `
 			<a class="abh-flow-step ${tone}" data-stage="${label_key}" href="${href}" title="${frappe.utils.escape_html(
 			this.t("open_list")
 		)}">
-				<div class="abh-flow-count">${this.format_number(value)}</div>
+				<div class="abh-flow-node">
+					<div class="abh-flow-stage-icon">${this.icon(label_key)}</div>
+					<div class="abh-flow-count" data-count-target="${target}">0</div>
+				</div>
 				<div class="abh-flow-label">${frappe.utils.escape_html(this.t(label_key))}</div>
 			</a>`;
 	},
 
 	metric_card(label_key, value, tone, icon) {
+		const numeric = typeof value !== "string";
+		const display = numeric ? 0 : value;
+		const target = numeric ? this.num(value) : "";
 		return `
 			<div class="abh-metric-card ${tone}">
-				<div class="abh-icon">${frappe.utils.escape_html(icon)}</div>
+				<div class="abh-icon">${this.icon(label_key, icon)}</div>
 				<div>
-					<div class="abh-metric-value">${
-						typeof value === "string"
-							? frappe.utils.escape_html(value)
-							: this.format_number(value)
-					}</div>
+					<div class="abh-metric-value" ${numeric ? `data-count-target="${target}"` : ""}>${
+			numeric ? this.format_number(display) : frappe.utils.escape_html(display)
+		}</div>
 					<div class="abh-metric-label">${frappe.utils.escape_html(this.t(label_key))}</div>
 				</div>
 			</div>`;
+	},
+
+	animate_counters() {
+		if (this.counterFrame) {
+			cancelAnimationFrame(this.counterFrame);
+			this.counterFrame = null;
+		}
+
+		const nodes = Array.from(
+			document.querySelectorAll("#clf-dashboard-root [data-count-target]")
+		);
+		const duration = 850;
+		const start = performance.now();
+
+		const tick = (now) => {
+			const progress = Math.min(1, (now - start) / duration);
+			const eased = 1 - Math.pow(1 - progress, 3);
+
+			nodes.forEach((node) => {
+				const target = Number(node.getAttribute("data-count-target") || 0);
+				node.textContent = this.format_number(Math.round(target * eased));
+			});
+
+			if (progress < 1) {
+				this.counterFrame = requestAnimationFrame(tick);
+			} else {
+				this.counterFrame = null;
+			}
+		};
+
+		this.counterFrame = requestAnimationFrame(tick);
+	},
+
+	icon(key, fallback) {
+		const icons = {
+			shg_approved:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11.5a4 4 0 1 1 8 0v1.2h1.2A2.8 2.8 0 0 1 20 15.5V19H4v-3.5a2.8 2.8 0 0 1 2.8-2.8H8v-1.2Z"/><path d="m9.4 11.2 1.7 1.7 3.7-4"/></svg>',
+			vo_pending:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg>',
+			vo_approved:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 11.5 10 17 19 7"/><path d="M4 19h16"/></svg>',
+			clf_pending:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12v5c0 4.5-2.4 7.4-6 9-3.6-1.6-6-4.5-6-9V5Z"/><path d="M12 8v4l2.5 1.5"/></svg>',
+			clf_approved:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12v5c0 4.5-2.4 7.4-6 9-3.6-1.6-6-4.5-6-9V5Z"/><path d="m9 12 2 2 4-5"/></svg>',
+			total_registered:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+			under_training:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12"/><path d="M6 21h12"/><path d="M8 3v4.5c0 1.4.8 2.7 2.1 3.3L12 12l1.9-1.2A3.7 3.7 0 0 0 16 7.5V3"/><path d="M8 21v-4.5c0-1.4.8-2.7 2.1-3.3L12 12l1.9 1.2a3.7 3.7 0 0 1 2.1 3.3V21"/></svg>',
+			passed: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
+			failed: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+			loan_applicants:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>',
+			loan_disbursed:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M7 12h.01M17 12h.01"/></svg>',
+			amount_disbursed:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8M8 9h8M9 5c5 0 5 8 0 8l6 6"/></svg>',
+			median_days:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l4 2"/></svg>',
+			home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/><path d="M10 19v-5h4v5"/></svg>',
+			nomination_stage:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M7 19V9"/><path d="M12 19V5"/><path d="M17 19v-7"/></svg>',
+			training_stage:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 8 8-4 8 4-8 4-8-4Z"/><path d="M7 10.5V15c0 1.7 2.2 3 5 3s5-1.3 5-3v-4.5"/></svg>',
+			loan_stage:
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8M8 9h8M9 5c5 0 5 8 0 8l6 6"/></svg>',
+		};
+		return icons[key] || frappe.utils.escape_html(fallback || "");
 	},
 
 	num(value) {
@@ -913,1045 +1103,4 @@ const abhilasha_dashboard = {
 	},
 };
 
-function add_abhilasha_dashboard_style() {
-	frappe.dom.set_style(`
-		#abhilasha-dashboard {
-			min-height: calc(100vh - 120px);
-			background: #f7f2e8;
-			color: #1f2933;
-			margin: -15px;
-			padding: 24px;
-		}
-
-		#abhilasha-dashboard .abh-shell {
-			max-width: 1180px;
-			margin: 0 auto;
-			display: flex;
-			flex-direction: column;
-			gap: 18px;
-		}
-
-		#abhilasha-dashboard .abh-header {
-			display: flex;
-			justify-content: space-between;
-			gap: 18px;
-			align-items: flex-start;
-		}
-
-		#abhilasha-dashboard .abh-kicker,
-		#abhilasha-dashboard .abh-section-label {
-			font-size: 12px;
-			font-weight: 700;
-			letter-spacing: 0.08em;
-			text-transform: uppercase;
-			color: #8b6f47;
-		}
-
-		#abhilasha-dashboard h1 {
-			font-size: 34px;
-			line-height: 1.1;
-			font-weight: 750;
-			margin: 4px 0 8px;
-			color: #1d1b18;
-			letter-spacing: 0;
-		}
-
-		#abhilasha-dashboard p {
-			max-width: 620px;
-			font-size: 14px;
-			color: #6b6255;
-			margin: 0;
-		}
-
-		#abhilasha-dashboard .abh-actions {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			flex-wrap: wrap;
-			justify-content: flex-end;
-		}
-
-		#abhilasha-dashboard .abh-lang {
-			display: flex;
-			background: #ece7dc;
-			padding: 4px;
-			border-radius: 999px;
-			border: 1px solid #e0d8c8;
-		}
-
-		#abhilasha-dashboard button {
-			border: 0;
-			font-size: 12px;
-			font-weight: 700;
-			cursor: pointer;
-		}
-
-		#abhilasha-dashboard .abh-lang button {
-			min-width: 42px;
-			padding: 7px 10px;
-			border-radius: 999px;
-			background: transparent;
-			color: #6b6255;
-		}
-
-		#abhilasha-dashboard .abh-lang button.active {
-			background: #ffffff;
-			color: #1d1b18;
-			box-shadow: 0 1px 3px rgba(47, 36, 22, 0.12);
-		}
-
-		#abhilasha-dashboard .abh-refresh {
-			display: inline-flex;
-			align-items: center;
-			gap: 7px;
-			background: #1d1b18;
-			color: #ffffff;
-			padding: 10px 14px;
-			border-radius: 999px;
-		}
-
-		#abhilasha-dashboard .abh-refresh-icon.spinning {
-			animation: abh-spin .6s linear;
-		}
-
-		#abhilasha-dashboard .abh-overview {
-			display: flex;
-			justify-content: space-between;
-			gap: 18px;
-			background: #fffdf8;
-			border: 1px solid #e4dccb;
-			border-radius: 8px;
-			padding: 18px;
-		}
-
-		#abhilasha-dashboard .abh-updated {
-			min-width: 180px;
-			text-align: right;
-			color: #7a7267;
-			font-size: 12px;
-		}
-
-		#abhilasha-dashboard .abh-updated strong {
-			display: block;
-			color: #1d1b18;
-			font-size: 14px;
-			margin-top: 4px;
-		}
-
-		#abhilasha-dashboard .abh-section {
-			background: #fffdf8;
-			border: 1px solid #e4dccb;
-			border-radius: 8px;
-			padding: 18px;
-		}
-
-		#abhilasha-dashboard .abh-flow-section {
-			background: #ffffff;
-			border: 0;
-			border-top: 4px solid #1666e8;
-			border-radius: 18px;
-			box-shadow: 0 14px 34px rgba(33, 28, 19, 0.10);
-			padding: 28px 32px 34px;
-			overflow: hidden;
-		}
-
-		#abhilasha-dashboard .abh-section-head {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			margin-bottom: 14px;
-		}
-
-		#abhilasha-dashboard .abh-flow-head {
-			gap: 14px;
-			margin-bottom: 36px;
-		}
-
-		#abhilasha-dashboard .abh-flow-head h2 {
-			color: #064cb8;
-			font-size: 21px;
-			font-weight: 800;
-		}
-
-		#abhilasha-dashboard .abh-flow-icon {
-			width: 48px;
-			height: 48px;
-			border-radius: 12px;
-			background: #eaf4ff;
-			display: inline-flex;
-			align-items: flex-end;
-			justify-content: center;
-			gap: 4px;
-			padding: 13px 12px;
-			color: #0654c5;
-			flex: 0 0 auto;
-		}
-
-		#abhilasha-dashboard .abh-flow-icon::before {
-			content: "";
-			width: 2px;
-			height: 23px;
-			background: #0654c5;
-			border-radius: 2px;
-		}
-
-		#abhilasha-dashboard .abh-flow-icon span {
-			width: 3px;
-			background: #0654c5;
-			border-radius: 2px 2px 0 0;
-		}
-
-		#abhilasha-dashboard .abh-flow-icon span:nth-child(1) { height: 9px; }
-		#abhilasha-dashboard .abh-flow-icon span:nth-child(2) { height: 18px; }
-		#abhilasha-dashboard .abh-flow-icon span:nth-child(3) { height: 6px; }
-
-		#abhilasha-dashboard .abh-dot {
-			width: 10px;
-			height: 10px;
-			border-radius: 50%;
-			display: inline-block;
-		}
-
-		#abhilasha-dashboard .abh-dot.blue { background: #4f7fc8; }
-		#abhilasha-dashboard .abh-dot.green { background: #4f8a5a; }
-		#abhilasha-dashboard .abh-dot.amber { background: #c68853; }
-
-		#abhilasha-dashboard h2 {
-			font-size: 15px;
-			font-weight: 750;
-			margin: 0;
-			color: #1d1b18;
-			letter-spacing: 0;
-		}
-
-		#abhilasha-dashboard .abh-flow-track {
-			position: relative;
-			display: grid;
-			grid-template-columns: repeat(5, minmax(120px, 1fr));
-			align-items: start;
-			gap: 20px;
-			padding: 0 58px;
-		}
-
-		#abhilasha-dashboard .abh-flow-track::before {
-			content: "";
-			position: absolute;
-			top: 22px;
-			left: calc(10% + 58px);
-			right: calc(10% + 58px);
-			height: 1px;
-			background: #ddd8cf;
-		}
-
-		#abhilasha-dashboard .abh-flow-step {
-			position: relative;
-			z-index: 1;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			gap: 12px;
-			text-align: center;
-			text-decoration: none;
-			color: inherit;
-		}
-
-		#abhilasha-dashboard .abh-flow-count {
-			min-width: 52px;
-			height: 40px;
-			padding: 0 14px;
-			border-radius: 999px;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			font-size: 28px;
-			font-weight: 850;
-			line-height: 1;
-			background: #eaf4ff;
-			color: #0757c6;
-		}
-
-		#abhilasha-dashboard .abh-flow-step.gray .abh-flow-count {
-			background: #eceef2;
-			color: #6f7580;
-		}
-
-		#abhilasha-dashboard .abh-flow-step.green .abh-flow-count {
-			background: #dff7e5;
-			color: #12662a;
-		}
-
-		#abhilasha-dashboard .abh-flow-label {
-			font-size: 14px;
-			font-weight: 800;
-			color: #222222;
-			line-height: 1.25;
-			min-height: 36px;
-			display: flex;
-			align-items: flex-start;
-			justify-content: center;
-		}
-
-		#abhilasha-dashboard .abh-flow-step:hover .abh-flow-count {
-			box-shadow: 0 8px 18px rgba(6, 84, 197, 0.18);
-			transform: translateY(-1px);
-		}
-
-		#abhilasha-dashboard .abh-metric-grid {
-			display: grid;
-			grid-template-columns: repeat(4, minmax(160px, 1fr));
-			gap: 12px;
-		}
-
-		#abhilasha-dashboard .abh-metric-card {
-			background: #ffffff;
-			border: 1px solid #e6dfd2;
-			border-radius: 8px;
-			text-decoration: none;
-			color: inherit;
-			transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
-		}
-
-		#abhilasha-dashboard .abh-metric-card:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 10px 24px rgba(47, 36, 22, 0.10);
-		}
-
-		#abhilasha-dashboard .abh-metric-label {
-			font-size: 13px;
-			font-weight: 650;
-			color: #4b5563;
-		}
-
-		#abhilasha-dashboard .abh-connector {
-			align-self: center;
-			background: #1d1b18;
-			color: #ffffff;
-			font-size: 12px;
-			font-weight: 700;
-			border-radius: 999px;
-			padding: 8px 14px;
-			margin: -4px 0;
-		}
-
-		#abhilasha-dashboard .abh-metric-card {
-			display: flex;
-			align-items: center;
-			gap: 14px;
-			padding: 16px;
-			min-height: 98px;
-		}
-
-		#abhilasha-dashboard .abh-icon {
-			width: 42px;
-			height: 42px;
-			border-radius: 50%;
-			display: grid;
-			place-items: center;
-			font-size: 12px;
-			font-weight: 800;
-			flex: 0 0 auto;
-		}
-
-		#abhilasha-dashboard .abh-metric-card.blue .abh-icon { background: #e7f0ff; color: #315f9d; }
-		#abhilasha-dashboard .abh-metric-card.green .abh-icon { background: #e5f4e8; color: #356b42; }
-		#abhilasha-dashboard .abh-metric-card.amber .abh-icon { background: #fff2df; color: #8a5725; }
-		#abhilasha-dashboard .abh-metric-card.red .abh-icon { background: #fde8e8; color: #9b2c2c; }
-		#abhilasha-dashboard .abh-metric-card.gray .abh-icon { background: #eceae3; color: #5d5851; }
-
-		#abhilasha-dashboard .abh-metric-value {
-			font-size: 24px;
-			font-weight: 800;
-			color: #1d1b18;
-			line-height: 1.1;
-		}
-
-		#abhilasha-dashboard .abh-list-page {
-			min-height: calc(100vh - 150px);
-		}
-
-		#abhilasha-dashboard .abh-list-top {
-			display: flex;
-			justify-content: space-between;
-			align-items: flex-start;
-			gap: 18px;
-			margin-bottom: 26px;
-		}
-
-		#abhilasha-dashboard .abh-back-btn {
-			background: #ece9e0;
-			color: #1f1f1f;
-			border-radius: 16px;
-			padding: 16px 28px;
-			font-size: 16px;
-			font-weight: 800;
-		}
-
-		#abhilasha-dashboard .abh-list-total {
-			min-width: 88px;
-			min-height: 82px;
-			border-radius: 18px;
-			background: #eef3fb;
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			color: #1d1d1d;
-		}
-
-		#abhilasha-dashboard .abh-list-total strong {
-			font-size: 32px;
-			line-height: 1;
-			font-weight: 850;
-		}
-
-		#abhilasha-dashboard .abh-list-total span {
-			font-size: 13px;
-			color: #5f6773;
-			font-weight: 700;
-		}
-
-		#abhilasha-dashboard .abh-list-title {
-			font-size: 31px;
-			margin: 0 0 60px;
-			color: #1c1c1c;
-		}
-
-		#abhilasha-dashboard .abh-tabs-row {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 14px;
-			flex-wrap: wrap;
-			margin-bottom: 18px;
-		}
-
-		#abhilasha-dashboard .abh-tabs {
-			display: flex;
-			gap: 10px;
-			flex-wrap: wrap;
-			min-width: 0;
-		}
-
-		#abhilasha-dashboard .abh-tab {
-			border-radius: 24px;
-			padding: 16px 24px;
-			background: #ece9e0;
-			color: #404954;
-			font-size: 14px;
-			font-weight: 850;
-		}
-
-		#abhilasha-dashboard .abh-tab.active {
-			background: #1d1d1d;
-			color: #ffffff;
-		}
-
-		#abhilasha-dashboard .abh-tab:disabled {
-			opacity: 0.85;
-			cursor: not-allowed;
-		}
-
-		#abhilasha-dashboard .abh-list-rule {
-			height: 1px;
-			background: #ddd7cb;
-			margin: 0 0 18px;
-		}
-
-		#abhilasha-dashboard .abh-filter-row {
-			display: grid;
-			grid-template-columns: repeat(4, minmax(190px, 1fr));
-			align-items: center;
-			gap: 12px;
-			margin-bottom: 16px;
-		}
-
-		#abhilasha-dashboard .abh-list-tools {
-			display: flex;
-			align-items: center;
-			gap: 12px;
-			flex-wrap: wrap;
-			margin-bottom: 18px;
-			justify-content: flex-end;
-			margin-bottom: 26px;
-		}
-
-		#abhilasha-dashboard .abh-select-wrap {
-			position: relative;
-			min-width: 0;
-			z-index: 3;
-		}
-
-		#abhilasha-dashboard .abh-select-btn {
-			width: 100%;
-			height: 58px;
-			border-radius: 10px;
-			border: 1px solid #d5d8dd;
-			background: #ffffff;
-			padding: 0 44px 0 18px;
-			font-size: 15px;
-			font-weight: 800;
-			color: #222222;
-			box-shadow: 0 1px 2px rgba(31, 31, 31, 0.03);
-			outline: 0;
-			transition: border-color .15s ease, box-shadow .15s ease;
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 12px;
-			text-align: left;
-		}
-
-		#abhilasha-dashboard .abh-select-btn span {
-			min-width: 0;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			white-space: nowrap;
-		}
-
-		#abhilasha-dashboard .abh-select-btn i {
-			width: 9px;
-			height: 9px;
-			border-right: 2px solid #28323f;
-			border-bottom: 2px solid #28323f;
-			transform: translateY(-2px) rotate(45deg);
-			flex: 0 0 auto;
-			transition: transform .15s ease;
-		}
-
-		#abhilasha-dashboard .abh-select-btn:hover,
-		#abhilasha-dashboard .abh-search:hover {
-			border-color: #b9c0ca;
-		}
-
-		#abhilasha-dashboard .abh-select-wrap.open .abh-select-btn,
-		#abhilasha-dashboard .abh-select-btn:focus,
-		#abhilasha-dashboard .abh-search:focus-within {
-			border-color: #4f7fc8;
-			box-shadow: 0 0 0 3px rgba(79, 127, 200, 0.14);
-		}
-
-		#abhilasha-dashboard .abh-select-wrap.open {
-			z-index: 20;
-		}
-
-		#abhilasha-dashboard .abh-select-wrap.open .abh-select-btn i {
-			transform: translateY(2px) rotate(225deg);
-		}
-
-		#abhilasha-dashboard .abh-select-menu {
-			position: absolute;
-			top: calc(100% + 8px);
-			left: 0;
-			right: 0;
-			display: none;
-			max-height: 260px;
-			overflow: auto;
-			background: #ffffff;
-			border: 1px solid #d8dce2;
-			border-radius: 10px;
-			padding: 6px;
-			box-shadow: 0 14px 34px rgba(31, 31, 31, 0.16);
-		}
-
-		#abhilasha-dashboard .abh-select-wrap.open .abh-select-menu {
-			display: grid;
-			gap: 2px;
-		}
-
-		#abhilasha-dashboard .abh-select-option {
-			width: 100%;
-			min-height: 38px;
-			border-radius: 8px;
-			background: transparent;
-			color: #1f2933;
-			padding: 9px 12px;
-			font-size: 14px;
-			font-weight: 700;
-			text-align: left;
-			overflow-wrap: anywhere;
-		}
-
-		#abhilasha-dashboard .abh-select-option:hover,
-		#abhilasha-dashboard .abh-select-option.active {
-			background: #eaf4ff;
-			color: #064cb8;
-		}
-
-		#abhilasha-dashboard .abh-select-option.active {
-			font-weight: 850;
-		}
-
-		#abhilasha-dashboard .abh-search {
-			width: 100%;
-			min-width: 0;
-			height: 58px;
-			border: 1px solid #d5d8dd;
-			border-radius: 10px;
-			background: #ffffff;
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			padding: 0 16px;
-			box-shadow: 0 1px 2px rgba(31, 31, 31, 0.03);
-			transition: border-color .15s ease, box-shadow .15s ease;
-		}
-
-		#abhilasha-dashboard .abh-search span {
-			color: #6b7280;
-			font-size: 20px;
-		}
-
-		#abhilasha-dashboard .abh-search input {
-			border: 0;
-			outline: 0;
-			width: 100%;
-			font-size: 15px;
-			font-weight: 700;
-			background: transparent;
-		}
-
-		#abhilasha-dashboard .abh-sort {
-			display: inline-flex;
-			border-radius: 12px;
-			background: #ece9e0;
-			padding: 4px;
-		}
-
-		#abhilasha-dashboard .abh-sort button {
-			padding: 14px 16px;
-			border-radius: 9px;
-			background: #fffdf8;
-			color: #1d1d1d;
-			font-size: 14px;
-			font-weight: 850;
-		}
-
-		#abhilasha-dashboard .abh-sort button.active {
-			background: #1d1d1d;
-			color: #ffffff;
-		}
-
-		#abhilasha-dashboard .abh-card-grid {
-			display: grid;
-			grid-template-columns: repeat(4, minmax(260px, 1fr));
-			gap: 24px;
-		}
-
-		#abhilasha-dashboard .abh-list-card {
-			border: 1px solid #e2e4e8;
-			border-radius: 24px;
-			background: #ffffff;
-			padding: 24px 24px 0;
-			min-height: 200px;
-			text-align: left;
-			box-shadow: 0 12px 28px rgba(31, 31, 31, 0.06);
-			overflow: hidden;
-			display: flex;
-			flex-direction: column;
-			color: #222222;
-		}
-
-		#abhilasha-dashboard .abh-list-card:hover {
-			transform: translateY(-3px);
-			box-shadow: 0 18px 36px rgba(31, 31, 31, 0.10);
-		}
-
-		#abhilasha-dashboard .abh-card-main {
-			display: flex;
-			justify-content: space-between;
-			gap: 14px;
-			min-height: 96px;
-		}
-
-		#abhilasha-dashboard .abh-card-main > div:first-child {
-			min-width: 0;
-			flex: 1 1 auto;
-		}
-
-		#abhilasha-dashboard .abh-list-card h3 {
-			font-size: 18px;
-			line-height: 1.15;
-			margin: 0 0 14px;
-			font-weight: 850;
-			color: #111111;
-			overflow-wrap: anywhere;
-		}
-
-		#abhilasha-dashboard .abh-village {
-			font-size: 16px;
-			font-weight: 800;
-			color: #6c665c;
-			overflow-wrap: anywhere;
-		}
-
-		#abhilasha-dashboard .abh-avatar {
-			width: 72px;
-			height: 72px;
-			border-radius: 18px;
-			object-fit: cover;
-			background: #f1eee8;
-			flex: 0 0 auto;
-		}
-
-		#abhilasha-dashboard .abh-avatar-fallback {
-			display: grid;
-			place-items: center;
-			font-size: 25px;
-			font-weight: 850;
-			color: #064cb8;
-			background: #eaf4ff;
-		}
-
-		#abhilasha-dashboard .abh-card-kicker {
-			font-size: 12px;
-			font-weight: 850;
-			letter-spacing: 0.06em;
-			text-transform: uppercase;
-			color: #9d978d;
-			margin-top: 16px;
-		}
-
-		#abhilasha-dashboard .abh-card-stage {
-			display: flex;
-			align-items: center;
-			gap: 10px;
-			font-size: 19px;
-			font-weight: 850;
-			color: #202020;
-			margin-top: 8px;
-			min-width: 0;
-		}
-
-		#abhilasha-dashboard .abh-mini-chart {
-			color: #4f7fc8;
-			font-size: 18px;
-			flex: 0 0 auto;
-		}
-
-		#abhilasha-dashboard .abh-status-pill {
-			align-self: flex-start;
-			display: inline-flex;
-			align-items: center;
-			gap: 9px;
-			border-radius: 999px;
-			background: #e3f2ff;
-			color: #0654c5;
-			padding: 8px 12px;
-			font-size: 16px;
-			font-weight: 850;
-			margin-top: 10px;
-			margin-bottom: 18px;
-			max-width: 100%;
-			overflow-wrap: anywhere;
-		}
-
-		#abhilasha-dashboard .abh-status-pill span {
-			width: 10px;
-			height: 10px;
-			border-radius: 50%;
-			background: #0757c6;
-		}
-
-		#abhilasha-dashboard .abh-status-pill.muted {
-			background: #f5f5f5;
-			color: #a5a5a5;
-			font-size: 14px;
-			margin: 0;
-		}
-
-		#abhilasha-dashboard .abh-card-footer {
-			background: #eaf4ff;
-			margin: auto -24px 0;
-			padding: 20px 24px 22px;
-			display: flex;
-			flex-direction: column;
-			gap: 10px;
-		}
-
-		#abhilasha-dashboard .abh-card-footer strong {
-			font-size: 19px;
-			line-height: 1.25;
-			color: #202020;
-		}
-
-		#abhilasha-dashboard .abh-card-footer span {
-			font-size: 12px;
-			font-weight: 850;
-			letter-spacing: 0.06em;
-			text-transform: uppercase;
-			color: #8490a2;
-		}
-
-		#abhilasha-dashboard .abh-empty,
-		#abhilasha-dashboard .abh-list-loading {
-			grid-column: 1 / -1;
-			background: #ffffff;
-			border: 1px solid #e2e4e8;
-			border-radius: 16px;
-			padding: 32px;
-			font-weight: 800;
-			color: #6b6255;
-		}
-
-		#abhilasha-dashboard .abh-list-loading-wrap {
-			min-height: calc(100vh - 170px);
-			display: grid;
-			place-items: center;
-		}
-
-		#abhilasha-dashboard .abh-pager {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			gap: 12px;
-			flex-wrap: wrap;
-			margin: 28px 0 8px;
-			font-weight: 800;
-		}
-
-		#abhilasha-dashboard .abh-pager button {
-			background: #1d1d1d;
-			color: #ffffff;
-			border-radius: 10px;
-			padding: 12px 18px;
-		}
-
-		#abhilasha-dashboard .abh-pager button:disabled {
-			opacity: 0.35;
-			cursor: not-allowed;
-		}
-
-		#abhilasha-dashboard .abh-page-size {
-			display: inline-flex;
-			align-items: center;
-			gap: 4px;
-			border-radius: 10px;
-			background: #ece9e0;
-			padding: 4px;
-		}
-
-		#abhilasha-dashboard .abh-page-size button {
-			background: transparent;
-			color: #4b5563;
-			border-radius: 8px;
-			padding: 10px 13px;
-		}
-
-		#abhilasha-dashboard .abh-page-size button.active {
-			background: #1d1d1d;
-			color: #ffffff;
-		}
-
-		#abhilasha-dashboard .abh-page-size-top {
-			flex: 0 0 auto;
-			margin-left: auto;
-		}
-
-		#abh-detail-modal {
-			position: fixed;
-			inset: 0;
-			z-index: 1050;
-		}
-
-		#abhilasha-dashboard .abh-modal-backdrop {
-			position: fixed;
-			inset: 0;
-			background: rgba(0, 0, 0, 0.52);
-			display: flex;
-			justify-content: center;
-			align-items: flex-start;
-			padding: 38px 18px;
-			overflow: auto;
-		}
-
-		#abhilasha-dashboard .abh-modal-card {
-			position: relative;
-			width: min(660px, 100%);
-			background: #ffffff;
-			border-radius: 26px;
-			padding: 34px 24px 24px;
-			box-shadow: 0 24px 70px rgba(0, 0, 0, 0.25);
-		}
-
-		#abhilasha-dashboard .abh-modal-close {
-			position: absolute;
-			top: 18px;
-			right: 18px;
-			width: 50px;
-			height: 50px;
-			border-radius: 50%;
-			background: #ffffff;
-			box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
-			font-size: 24px;
-			color: #394150;
-		}
-
-		#abhilasha-dashboard .abh-modal-person {
-			display: flex;
-			align-items: center;
-			gap: 22px;
-			margin: 0 70px 30px 12px;
-		}
-
-		#abhilasha-dashboard .abh-modal-person h2 {
-			font-size: 30px;
-			margin: 0 0 8px;
-		}
-
-		#abhilasha-dashboard .abh-modal-person p {
-			font-size: 16px;
-			font-weight: 800;
-			color: #6c665c;
-		}
-
-		#abhilasha-dashboard .abh-modal-section {
-			border-radius: 18px;
-			border: 1px solid #eef0f3;
-			padding: 26px;
-			margin-top: 14px;
-			background: #fffdf9;
-		}
-
-		#abhilasha-dashboard .abh-modal-section.active {
-			border-color: #8db6ff;
-		}
-
-		#abhilasha-dashboard .abh-modal-section-head {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
-			gap: 12px;
-			padding-bottom: 16px;
-			border-bottom: 1px solid #ece7df;
-			margin-bottom: 2px;
-		}
-
-		#abhilasha-dashboard .abh-kv {
-			display: flex;
-			justify-content: space-between;
-			gap: 16px;
-			padding: 17px 0;
-			border-bottom: 1px solid #ece7df;
-			font-size: 16px;
-		}
-
-		#abhilasha-dashboard .abh-kv span {
-			color: #8a8277;
-			font-weight: 800;
-		}
-
-		#abhilasha-dashboard .abh-kv strong {
-			color: #111111;
-			font-size: 18px;
-			text-align: right;
-		}
-
-		#abhilasha-dashboard .abh-muted-note {
-			margin-top: 18px;
-			color: #beb8af;
-			font-weight: 700;
-		}
-
-		@keyframes abh-spin {
-			to { transform: rotate(360deg); }
-		}
-
-		@media (max-width: 900px) {
-			#abhilasha-dashboard {
-				padding: 16px;
-			}
-
-			#abhilasha-dashboard .abh-header,
-			#abhilasha-dashboard .abh-overview {
-				flex-direction: column;
-			}
-
-			#abhilasha-dashboard .abh-actions {
-				justify-content: flex-start;
-			}
-
-			#abhilasha-dashboard .abh-updated {
-				text-align: left;
-			}
-
-			#abhilasha-dashboard .abh-metric-grid {
-				grid-template-columns: repeat(2, minmax(0, 1fr));
-			}
-
-			#abhilasha-dashboard .abh-flow-track {
-				padding: 0;
-				grid-template-columns: repeat(2, minmax(0, 1fr));
-			}
-
-			#abhilasha-dashboard .abh-flow-track::before {
-				display: none;
-			}
-
-			#abhilasha-dashboard .abh-card-grid {
-				grid-template-columns: repeat(2, minmax(0, 1fr));
-				gap: 18px;
-			}
-
-			#abhilasha-dashboard .abh-filter-row {
-				grid-template-columns: repeat(2, minmax(0, 1fr));
-			}
-
-			#abhilasha-dashboard .abh-tabs-row,
-			#abhilasha-dashboard .abh-list-tools {
-				align-items: flex-start;
-			}
-
-			#abhilasha-dashboard .abh-page-size-top {
-				margin-left: 0;
-			}
-		}
-
-		@media (max-width: 520px) {
-			#abhilasha-dashboard h1 {
-				font-size: 26px;
-			}
-
-			#abhilasha-dashboard .abh-metric-grid {
-				grid-template-columns: 1fr;
-			}
-
-			#abhilasha-dashboard .abh-flow-section {
-				padding: 22px 18px 24px;
-				border-radius: 14px;
-			}
-
-			#abhilasha-dashboard .abh-flow-track {
-				grid-template-columns: 1fr;
-				gap: 16px;
-			}
-
-			#abhilasha-dashboard .abh-card-grid {
-				grid-template-columns: 1fr;
-			}
-
-			#abhilasha-dashboard .abh-filter-row {
-				grid-template-columns: 1fr;
-			}
-
-			#abhilasha-dashboard .abh-list-card {
-				min-height: 420px;
-				padding: 24px 24px 0;
-			}
-
-			#abhilasha-dashboard .abh-card-footer {
-				margin-left: -24px;
-				margin-right: -24px;
-			}
-
-			#abhilasha-dashboard .abh-sort,
-			#abhilasha-dashboard .abh-page-size,
-			#abhilasha-dashboard .abh-search {
-				width: 100%;
-			}
-
-			#abhilasha-dashboard .abh-page-size {
-				justify-content: space-between;
-			}
-		}
-	`);
-}
+function add_clf_dashboard_style() {}
