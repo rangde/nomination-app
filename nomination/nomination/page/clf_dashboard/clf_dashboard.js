@@ -836,6 +836,7 @@ const clf_dashboard = {
 		const name = this.full_name(row);
 		const updated = this.date_label(row.modified);
 		const statusKey = this.row_status_key(row);
+		const approval = this.row_approval(row);
 		const stageLabel = this.t("nomination_tab");
 		const stageIcon = this.icon("nomination_stage");
 		const delayMs = Math.min(index, 11) * 35;
@@ -858,6 +859,13 @@ const clf_dashboard = {
 		)}</div>
 				<div class="abh-card-kicker">${frappe.utils.escape_html(this.t("status"))}</div>
 				<div class="abh-status-pill"><span></span>${frappe.utils.escape_html(this.t(statusKey))}</div>
+				${
+					approval
+						? `<div class="abh-card-approval">${this.icon(
+								"check"
+						  )} ${frappe.utils.escape_html(approval)}</div>`
+						: ""
+				}
 				<div class="abh-card-footer">
 					<div>
 						<strong>${this.icon("median_days")} ${frappe.utils.escape_html(updated)}</strong>
@@ -964,12 +972,53 @@ const clf_dashboard = {
 		return "shg_approved";
 	},
 
+	row_approval(row) {
+		const state = row.workflow_state;
+		const shgName = row.name_of_the_shg || row.shg_approval_by;
+
+		if (state === "SHG Proposed" && shgName) {
+			return `Approved by ${shgName}`;
+		}
+
+		if (state === "VO Approved") {
+			const prefix = shgName
+				? `Approved by VO associated with ${shgName}`
+				: "Approved by VO";
+			const approvedOn = this.date_time_label(row.vo_approved_on);
+			return approvedOn ? `${prefix} on ${approvedOn}` : prefix;
+		}
+
+		if (state === "CLF Approved") {
+			const prefix = shgName
+				? `Approved by CLF associated with ${shgName}`
+				: "Approved by CLF";
+			const approvedOn = this.date_time_label(row.clf_approved_on);
+			return approvedOn ? `${prefix} on ${approvedOn}` : prefix;
+		}
+
+		return "";
+	},
+
 	date_label(value) {
 		if (!value) return "-";
 		return new Date(String(value).replace(" ", "T")).toLocaleDateString("en-IN", {
 			day: "2-digit",
 			month: "short",
 			year: "numeric",
+		});
+	},
+
+	date_time_label(value) {
+		if (!value) return "";
+		const date = new Date(String(value).replace(" ", "T"));
+		if (Number.isNaN(date.getTime())) return String(value);
+
+		return date.toLocaleString("en-IN", {
+			day: "2-digit",
+			month: "short",
+			hour: "numeric",
+			minute: "2-digit",
+			hour12: true,
 		});
 	},
 
@@ -1068,6 +1117,7 @@ const clf_dashboard = {
 				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8M8 9h8M9 5c5 0 5 8 0 8l6 6"/></svg>',
 			median_days:
 				'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l4 2"/></svg>',
+			check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
 			home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/><path d="M10 19v-5h4v5"/></svg>',
 			nomination_stage:
 				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M7 19V9"/><path d="M12 19V5"/><path d="M17 19v-7"/></svg>',
