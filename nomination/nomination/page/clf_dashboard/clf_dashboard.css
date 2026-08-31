@@ -598,9 +598,9 @@ body:has(#clf-dashboard-root) .main-section {
 }
 
 #clf-dashboard-root .abh-icon {
-	width: 28px;
-	height: 28px;
-	border-radius: 50%;
+	width: 18px;
+	height: 18px;
+	border-radius: 0;
 	display: grid;
 	place-items: center;
 	font-size: 13px;
@@ -629,6 +629,12 @@ body:has(#clf-dashboard-root) .main-section {
 #clf-dashboard-root .abh-metric-card.amber .abh-icon { background: transparent; color: var(--clf-amber-fg); }
 #clf-dashboard-root .abh-metric-card.red .abh-icon { background: transparent; color: var(--clf-red-fg); }
 #clf-dashboard-root .abh-metric-card.gray .abh-icon { background: transparent; color: var(--clf-gray-fg); }
+
+#clf-dashboard-root .abh-metric-card .abh-icon svg {
+	width: 18px;
+	height: 18px;
+	stroke-width: 2;
+}
 
 #clf-dashboard-root .abh-metric-value {
 	font-size: 30px;
@@ -1162,6 +1168,26 @@ body:has(#clf-dashboard-root) .main-section {
 	color: var(--clf-muted-2);
 	font-size: 14px;
 	margin: 0;
+}
+
+#clf-dashboard-root .abh-card-approval {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	color: var(--clf-text-soft);
+	font-size: 14px;
+	font-weight: 750;
+	line-height: 1.35;
+	margin: 0 0 18px;
+	overflow-wrap: anywhere;
+}
+
+#clf-dashboard-root .abh-card-approval svg {
+	width: 16px;
+	height: 16px;
+	color: var(--clf-leaf);
+	flex: 0 0 auto;
+	margin-top: 1px;
 }
 
 #clf-dashboard-root .abh-card-footer {
