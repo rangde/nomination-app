@@ -692,31 +692,32 @@ const clf_dashboard = {
 				<div class="abh-list-rule"></div>
 
 				<div class="abh-filter-row">
-					${this.stage_select()}
-					${this.option_select("vo", this.t("all_vos"), this.listData.vos || [], this.vo)}
-					${this.option_select("shg", this.t("all_shgs"), this.listData.shgs || [], this.shg)}
-					<label class="abh-search">
-						<span>⌕</span>
-						<input data-filter="search" value="${frappe.utils.escape_html(
-							this.search
-						)}" placeholder="${frappe.utils.escape_html(
+					<div class="abh-filter-selects">
+						${this.stage_select()}
+						${this.option_select("vo", this.t("all_vos"), this.listData.vos || [], this.vo)}
+						${this.option_select("shg", this.t("all_shgs"), this.listData.shgs || [], this.shg)}
+					</div>
+					<div class="abh-filter-tools">
+						<label class="abh-search">
+							<span>⌕</span>
+							<input data-filter="search" value="${frappe.utils.escape_html(
+								this.search
+							)}" placeholder="${frappe.utils.escape_html(
 			this.t("search_placeholder")
 		)}">
-					</label>
-				</div>
-
-				<div class="abh-list-tools">
-					<div class="abh-sort">
-						<button class="${
-							this.sortBy === "modified" ? "active" : ""
-						}" type="button" data-sort="modified">${frappe.utils.escape_html(
+						</label>
+						<div class="abh-sort">
+							<button class="${
+								this.sortBy === "modified" ? "active" : ""
+							}" type="button" data-sort="modified">${frappe.utils.escape_html(
 			this.t("last_updated_sort")
 		)}</button>
-						<button class="${
-							this.sortBy === "created" ? "active" : ""
-						}" type="button" data-sort="created">${frappe.utils.escape_html(
+							<button class="${
+								this.sortBy === "created" ? "active" : ""
+							}" type="button" data-sort="created">${frappe.utils.escape_html(
 			this.t("date_created_sort")
 		)}</button>
+						</div>
 					</div>
 				</div>
 
@@ -827,7 +828,7 @@ const clf_dashboard = {
 			<div class="abh-select-wrap">
 				<button class="abh-select-btn" type="button" data-sheet-toggle="${frappe.utils.escape_html(type)}">
 					<span>${frappe.utils.escape_html(label)}</span>
-					<i aria-hidden="true"></i>
+					<i aria-hidden="true">▼</i>
 				</button>
 			</div>`;
 	},
@@ -836,7 +837,6 @@ const clf_dashboard = {
 		const name = this.full_name(row);
 		const updated = this.date_label(row.modified);
 		const statusKey = this.row_status_key(row);
-		const approval = this.row_approval(row);
 		const stageLabel = this.t("nomination_tab");
 		const stageIcon = this.icon("nomination_stage");
 		const delayMs = Math.min(index, 11) * 35;
@@ -859,13 +859,6 @@ const clf_dashboard = {
 		)}</div>
 				<div class="abh-card-kicker">${frappe.utils.escape_html(this.t("status"))}</div>
 				<div class="abh-status-pill"><span></span>${frappe.utils.escape_html(this.t(statusKey))}</div>
-				${
-					approval
-						? `<div class="abh-card-approval">${this.icon(
-								"check"
-						  )} ${frappe.utils.escape_html(approval)}</div>`
-						: ""
-				}
 				<div class="abh-card-footer">
 					<div>
 						<strong>${this.icon("median_days")} ${frappe.utils.escape_html(updated)}</strong>
@@ -972,33 +965,6 @@ const clf_dashboard = {
 		return "shg_approved";
 	},
 
-	row_approval(row) {
-		const state = row.workflow_state;
-		const shgName = row.name_of_the_shg || row.shg_approval_by;
-
-		if (state === "SHG Proposed" && shgName) {
-			return `Approved by ${shgName}`;
-		}
-
-		if (state === "VO Approved") {
-			const prefix = shgName
-				? `Approved by VO associated with ${shgName}`
-				: "Approved by VO";
-			const approvedOn = this.date_time_label(row.vo_approved_on);
-			return approvedOn ? `${prefix} on ${approvedOn}` : prefix;
-		}
-
-		if (state === "CLF Approved") {
-			const prefix = shgName
-				? `Approved by CLF associated with ${shgName}`
-				: "Approved by CLF";
-			const approvedOn = this.date_time_label(row.clf_approved_on);
-			return approvedOn ? `${prefix} on ${approvedOn}` : prefix;
-		}
-
-		return "";
-	},
-
 	date_label(value) {
 		if (!value) return "-";
 		return new Date(String(value).replace(" ", "T")).toLocaleDateString("en-IN", {
@@ -1050,13 +1016,13 @@ const clf_dashboard = {
 		const target = numeric ? this.num(value) : "";
 		return `
 			<div class="abh-metric-card ${tone}">
-				<div class="abh-icon">${this.icon(label_key, icon)}</div>
-				<div>
-					<div class="abh-metric-value" ${numeric ? `data-count-target="${target}"` : ""}>${
-			numeric ? this.format_number(display) : frappe.utils.escape_html(display)
-		}</div>
+				<div class="abh-metric-head">
+					<div class="abh-icon">${this.icon(label_key, icon)}</div>
 					<div class="abh-metric-label">${frappe.utils.escape_html(this.t(label_key))}</div>
 				</div>
+				<div class="abh-metric-value" ${numeric ? `data-count-target="${target}"` : ""}>${
+			numeric ? this.format_number(display) : frappe.utils.escape_html(display)
+		}</div>
 			</div>`;
 	},
 
