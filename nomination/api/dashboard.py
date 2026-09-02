@@ -65,25 +65,42 @@ def _nomination_owner_scope_for_session() -> set[str] | None:
 	return _get_subordinate_users(user)
 
 
-def _list_filters(stage_key: str, owners: set[str] | None, vo: str | None = None, shg: str | None = None):
-	if stage_key not in DASHBOARD_STAGE_FILTERS:
+def _as_filter_values(value):
+	if not value:
+		return []
+	if isinstance(value, str):
+		return [item.strip() for item in value.split(",") if item.strip()]
+	if isinstance(value, (list, tuple, set)):
+		return [str(item).strip() for item in value if str(item).strip()]
+	return [str(value).strip()]
+
+
+def _list_filters(stage_key: str, owners: set[str] | None, vo=None, shg=None):
+	stage_keys = _as_filter_values(stage_key) or ["all"]
+	if any(key not in DASHBOARD_STAGE_FILTERS for key in stage_keys):
 		frappe.throw(frappe._("Invalid dashboard stage selected."))
 
-	workflow_state = DASHBOARD_STAGE_FILTERS.get(stage_key)
+	workflow_states = sorted(
+		{DASHBOARD_STAGE_FILTERS.get(key) for key in stage_keys if DASHBOARD_STAGE_FILTERS.get(key)}
+	)
 	filters = {}
 
-	if workflow_state:
-		filters["workflow_state"] = workflow_state
+	if workflow_states and "all" not in stage_keys:
+		filters["workflow_state"] = (
+			workflow_states[0] if len(workflow_states) == 1 else ["in", workflow_states]
+		)
 
 	if owners is not None:
 		if not owners:
 			return None
 		filters["owner"] = ["in", list(owners)]
 
-	if vo:
-		filters["name_of_the_vo"] = vo
-	if shg:
-		filters["name_of_the_shg"] = shg
+	vo_values = _as_filter_values(vo)
+	shg_values = _as_filter_values(shg)
+	if vo_values:
+		filters["name_of_the_vo"] = vo_values[0] if len(vo_values) == 1 else ["in", vo_values]
+	if shg_values:
+		filters["name_of_the_shg"] = shg_values[0] if len(shg_values) == 1 else ["in", shg_values]
 
 	return filters
 
@@ -205,7 +222,7 @@ def get_dashboard_nomination_rows(
 		page = 1
 
 	try:
-		page_size = min(max(int(page_size), 1), 2500)
+		page_size = min(max(int(page_size), 1), 10000)
 	except (TypeError, ValueError):
 		page_size = 20
 
