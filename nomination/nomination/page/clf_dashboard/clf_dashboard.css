@@ -1096,6 +1096,8 @@ body:has(#clf-dashboard-root) .main-section {
 #clf-dashboard-root .abh-card-main > div:first-child {
 	min-width: 0;
 	flex: 1 1 auto;
+	display: flex;
+	flex-direction: column;
 }
 
 #clf-dashboard-root .abh-list-card h3 {
@@ -1105,6 +1107,11 @@ body:has(#clf-dashboard-root) .main-section {
 	font-weight: 800;
 	color: var(--clf-text);
 	overflow-wrap: anywhere;
+	min-height: calc(20px * 1.18 * 2);
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 #clf-dashboard-root .abh-village {

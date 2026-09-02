@@ -110,8 +110,9 @@ const clf_dashboard = {
 	view: "dashboard",
 	stageKey: "shg_approved",
 	page: 1,
-	pageSize: 20,
-	pageSizeOptions: [20, 100, 500, 2500],
+	pageSize: 10000,
+	collapsedCardLimit: 10,
+	showAllCards: false,
 	stageKeys: ["all", "shg_approved", "vo_pending", "vo_approved", "clf_pending", "clf_approved"],
 	selectedStages: [],
 	counterFrame: null,
@@ -119,7 +120,7 @@ const clf_dashboard = {
 	vo: [],
 	shg: [],
 	sortBy: "modified",
-	listData: { rows: [], total: 0, vos: [], shgs: [], page: 1, page_size: 20 },
+	listData: { rows: [], total: 0, vos: [], shgs: [], page: 1, page_size: 10000 },
 	searchTimer: null,
 	labels: {
 		en: {
@@ -179,6 +180,7 @@ const clf_dashboard = {
 			next: "Next",
 			done: "Done",
 			show_all: "Show All",
+			show_less: "Show Less",
 			page_of: "Page {0} of {1}",
 			showing_range: "{0} - {1} of {2}",
 			no_records: "No records found.",
@@ -239,6 +241,7 @@ const clf_dashboard = {
 			next: "आगे",
 			done: "हो गया",
 			show_all: "सभी दिखाएँ",
+			show_less: "कम दिखाएँ",
 			page_of: "पेज {0} / {1}",
 			showing_range: "{0} - {1} / {2}",
 			no_records: "कोई रिकॉर्ड नहीं मिला।",
@@ -282,6 +285,7 @@ const clf_dashboard = {
 			this.stageKey = $(event.currentTarget).data("stage-tab");
 			this.selectedStages = this.stageKey === "all" ? [] : [this.stageKey];
 			this.page = 1;
+			this.showAllCards = false;
 			this.load_list();
 		});
 
@@ -328,6 +332,7 @@ const clf_dashboard = {
 		$("#clf-dashboard-root").on("input", "[data-filter='search']", (event) => {
 			this.search = event.currentTarget.value;
 			this.page = 1;
+			this.showAllCards = false;
 			clearTimeout(this.searchTimer);
 			this.searchTimer = setTimeout(() => this.load_list(), 250);
 		});
@@ -335,18 +340,26 @@ const clf_dashboard = {
 		$("#clf-dashboard-root").on("click", "[data-sort]", (event) => {
 			this.sortBy = $(event.currentTarget).data("sort");
 			this.page = 1;
+			this.showAllCards = false;
 			this.load_list();
 		});
 
-		$("#clf-dashboard-root").on("click", "[data-page]", (event) => {
-			this.page = Number($(event.currentTarget).data("page"));
-			this.load_list();
+		$("#clf-dashboard-root").on("click", "[data-card-page]", (event) => {
+			this.page = Number($(event.currentTarget).data("card-page")) || 1;
+			this.showAllCards = false;
+			this.render_list();
 		});
 
-		$("#clf-dashboard-root").on("click", "[data-page-size]", (event) => {
-			this.pageSize = Number($(event.currentTarget).data("page-size"));
+		$("#clf-dashboard-root").on("click", "[data-action='show-all-cards']", () => {
 			this.page = 1;
-			this.load_list();
+			this.showAllCards = true;
+			this.render_list();
+		});
+
+		$("#clf-dashboard-root").on("click", "[data-action='show-less-cards']", () => {
+			this.page = 1;
+			this.showAllCards = false;
+			this.render_list();
 		});
 
 		$("#clf-dashboard-root").on("click", ".abh-list-card", (event) => {
@@ -374,6 +387,7 @@ const clf_dashboard = {
 		this.stageKey = this.normalize_stage(stageKey) || "shg_approved";
 		this.page = 1;
 		this.search = "";
+		this.showAllCards = false;
 		this.selectedStages = this.stageKey === "all" ? [] : [this.stageKey];
 		this.vo = [];
 		this.shg = [];
@@ -458,6 +472,7 @@ const clf_dashboard = {
 					page: 1,
 					page_size: this.pageSize,
 				};
+				this.page = 1;
 				this.render_list();
 			},
 			error: () => {
@@ -510,8 +525,9 @@ const clf_dashboard = {
 
 		this.view = "list";
 		this.stageKey = state.stageKey;
-		this.page = state.page;
+		this.page = 1;
 		this.pageSize = state.pageSize;
+		this.showAllCards = false;
 		this.search = state.search;
 		this.selectedStages = state.selectedStages;
 		this.vo = state.vo;
@@ -548,10 +564,6 @@ const clf_dashboard = {
 			return { view: "dashboard" };
 		}
 
-		const page = Math.max(1, Number(params.get("page")) || 1);
-		const pageSize = this.pageSizeOptions.includes(Number(params.get("page_size")))
-			? Number(params.get("page_size"))
-			: this.pageSize;
 		const sortBy = ["modified", "created"].includes(params.get("sort_by"))
 			? params.get("sort_by")
 			: "modified";
@@ -563,8 +575,8 @@ const clf_dashboard = {
 				params.get("stage_filter") || params.get("stage"),
 				this.normalize_stage.bind(this)
 			).filter((key) => key !== "all"),
-			page,
-			pageSize,
+			page: 1,
+			pageSize: this.pageSize,
 			search: params.get("search") || "",
 			vo: this.parse_multi_param(params.get("vo")),
 			shg: this.parse_multi_param(params.get("shg")),
@@ -586,8 +598,6 @@ const clf_dashboard = {
 		const params = new URLSearchParams();
 		params.set("view", "list");
 		params.set("stage", this.stageKey);
-		if (this.page > 1) params.set("page", String(this.page));
-		if (this.pageSize !== 20) params.set("page_size", String(this.pageSize));
 		if (this.search) params.set("search", this.search);
 		if (this.selectedStages.length) params.set("stage_filter", this.selectedStages.join(","));
 		if (this.vo.length) params.set("vo", this.vo.join(","));
@@ -676,7 +686,6 @@ const clf_dashboard = {
 
 	render_list() {
 		const total = this.num(this.listData.total);
-		const totalPages = Math.max(1, Math.ceil(total / this.pageSize));
 		const isAllStageView = !this.selectedStages.length;
 		const title =
 			this.selectedStages.length > 1
@@ -686,6 +695,13 @@ const clf_dashboard = {
 				  )
 				: this.t(this.stageKey);
 		const rows = this.listData.rows || [];
+		const totalPages = Math.max(1, Math.ceil(rows.length / this.collapsedCardLimit));
+		this.page = Math.min(Math.max(this.page, 1), totalPages);
+		const startIndex = (this.page - 1) * this.collapsedCardLimit;
+		const visibleRows = this.showAllCards
+			? rows
+			: rows.slice(startIndex, startIndex + this.collapsedCardLimit);
+		const hasMoreRows = rows.length > this.collapsedCardLimit;
 
 		$("#abh-list-view").html(`
 			<div class="abh-list-page">
@@ -694,9 +710,6 @@ const clf_dashboard = {
 						<div class="abh-list-total"><strong>${this.format_number(
 							total
 						)}</strong><span>${frappe.utils.escape_html(this.t("didis"))}</span></div>
-						<div class="abh-page-size abh-page-size-top">
-							${this.page_size_buttons()}
-						</div>
 					</div>
 				</div>
 
@@ -758,43 +771,47 @@ const clf_dashboard = {
 				<div class="abh-card-grid">
 					${
 						rows.length
-							? rows.map((row, index) => this.list_card(row, index)).join("")
+							? visibleRows.map((row, index) => this.list_card(row, index)).join("")
 							: `<div class="abh-empty">${frappe.utils.escape_html(
 									this.t("no_records")
 							  )}</div>`
 					}
 				</div>
 
-				<div class="abh-pager">
-					<button type="button" ${this.page <= 1 ? "disabled" : ""} data-page="${
-			this.page - 1
-		}"><span aria-hidden="true">←</span>${frappe.utils.escape_html(this.t("prev"))}</button>
-					<span>${frappe.utils.escape_html(
-						this.t("page_of")
-							.replace("{0}", this.format_number(this.page))
-							.replace("{1}", this.format_number(totalPages))
-					)}</span>
-					<button type="button" ${this.page >= totalPages ? "disabled" : ""} data-page="${
-			this.page + 1
-		}">${frappe.utils.escape_html(this.t("next"))}<span aria-hidden="true">→</span></button>
-					<button class="abh-show-all" type="button" data-page-size="${Math.max(
-						total,
-						this.pageSize
-					)}">${frappe.utils.escape_html(this.t("show_all"))}</button>
-				</div>
+				${
+					hasMoreRows
+						? `<div class="abh-pager">
+							${
+								this.showAllCards
+									? ""
+									: `<button type="button" ${
+											this.page <= 1 ? "disabled" : ""
+									  } data-card-page="${
+											this.page - 1
+									  }"><span aria-hidden="true">←</span>${frappe.utils.escape_html(
+											this.t("prev")
+									  )}</button>
+										<span>${frappe.utils.escape_html(
+											this.t("page_of")
+												.replace("{0}", this.format_number(this.page))
+												.replace("{1}", this.format_number(totalPages))
+										)}</span>
+										<button type="button" ${this.page >= totalPages ? "disabled" : ""} data-card-page="${
+											this.page + 1
+									  }">${frappe.utils.escape_html(
+											this.t("next")
+									  )}<span aria-hidden="true">→</span></button>`
+							}
+							<button class="abh-show-all" type="button" data-action="${
+								this.showAllCards ? "show-less-cards" : "show-all-cards"
+							}">${frappe.utils.escape_html(
+								this.t(this.showAllCards ? "show_less" : "show_all")
+						  )}</button>
+						</div>`
+						: ""
+				}
 			</div>
 		`);
-	},
-
-	page_size_buttons() {
-		return this.pageSizeOptions
-			.map(
-				(size) =>
-					`<button class="${
-						this.pageSize === size ? "active" : ""
-					}" type="button" data-page-size="${size}">${this.format_number(size)}</button>`
-			)
-			.join("");
 	},
 
 	stage_select() {
@@ -856,6 +873,7 @@ const clf_dashboard = {
 
 		this.close_filter_sheet();
 		this.page = 1;
+		this.showAllCards = false;
 		this.load_list();
 	},
 
