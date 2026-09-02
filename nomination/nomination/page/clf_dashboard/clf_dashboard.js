@@ -113,10 +113,11 @@ const clf_dashboard = {
 	pageSize: 20,
 	pageSizeOptions: [20, 100, 500, 2500],
 	stageKeys: ["all", "shg_approved", "vo_pending", "vo_approved", "clf_pending", "clf_approved"],
+	selectedStages: [],
 	counterFrame: null,
 	search: "",
-	vo: "",
-	shg: "",
+	vo: [],
+	shg: [],
 	sortBy: "modified",
 	listData: { rows: [], total: 0, vos: [], shgs: [], page: 1, page_size: 20 },
 	searchTimer: null,
@@ -174,8 +175,11 @@ const clf_dashboard = {
 			training_pending: "She will enter training after CLF approval.",
 			loan_pending: "Loan details will appear after training and assessment.",
 			not_yet: "Not Yet",
-			prev: "Prev",
+			prev: "Previous",
 			next: "Next",
+			done: "Done",
+			show_all: "Show All",
+			page_of: "Page {0} of {1}",
 			showing_range: "{0} - {1} of {2}",
 			no_records: "No records found.",
 		},
@@ -233,6 +237,9 @@ const clf_dashboard = {
 			not_yet: "अभी नहीं",
 			prev: "पिछला",
 			next: "आगे",
+			done: "हो गया",
+			show_all: "सभी दिखाएँ",
+			page_of: "पेज {0} / {1}",
 			showing_range: "{0} - {1} / {2}",
 			no_records: "कोई रिकॉर्ड नहीं मिला।",
 		},
@@ -273,6 +280,7 @@ const clf_dashboard = {
 
 		$("#clf-dashboard-root").on("click", "[data-stage-tab]", (event) => {
 			this.stageKey = $(event.currentTarget).data("stage-tab");
+			this.selectedStages = this.stageKey === "all" ? [] : [this.stageKey];
 			this.page = 1;
 			this.load_list();
 		});
@@ -285,18 +293,26 @@ const clf_dashboard = {
 
 		$("#clf-dashboard-root").on("click", "[data-dropdown-option]", (event) => {
 			event.stopPropagation();
-			const type = $(event.currentTarget).data("dropdown-type");
-			const value = String($(event.currentTarget).data("value") || "");
+			const button = $(event.currentTarget);
+			const value = String(button.data("value") || "");
+			const options = button.closest(".abh-sheet-options");
 
-			if (type === "stage") {
-				this.stageKey = this.normalize_stage(value) || "all";
-			} else {
-				this[type] = value;
+			if (!value) {
+				options.find("[data-dropdown-option]").removeClass("active");
+				button.addClass("active");
+				return;
 			}
 
-			this.close_filter_sheet();
-			this.page = 1;
-			this.load_list();
+			options.find('[data-value=""]').removeClass("active");
+			button.toggleClass("active");
+			if (!options.find("[data-dropdown-option].active").length) {
+				options.find('[data-value=""]').addClass("active");
+			}
+		});
+
+		$("#clf-dashboard-root").on("click", '[data-action="apply-filter-sheet"]', (event) => {
+			event.stopPropagation();
+			this.apply_filter_sheet($(event.currentTarget).data("sheet-type"));
 		});
 
 		$("#clf-dashboard-root").on(
@@ -358,8 +374,9 @@ const clf_dashboard = {
 		this.stageKey = this.normalize_stage(stageKey) || "shg_approved";
 		this.page = 1;
 		this.search = "";
-		this.vo = "";
-		this.shg = "";
+		this.selectedStages = this.stageKey === "all" ? [] : [this.stageKey];
+		this.vo = [];
+		this.shg = [];
 		this.sortBy = "modified";
 		$("#abh-dashboard-view").hide();
 		$("#abh-list-view").show();
@@ -382,8 +399,9 @@ const clf_dashboard = {
 					<div class="abh-sheet-options">
 						${config.options
 							.map((option) => {
-								const active =
-									String(option.value) === String(config.selected || "");
+								const active = option.value
+									? config.selected.includes(String(option.value))
+									: !config.selected.length;
 								return `<button class="abh-sheet-option ${
 									active ? "active" : ""
 								}" type="button" data-dropdown-type="${frappe.utils.escape_html(
@@ -397,6 +415,11 @@ const clf_dashboard = {
 								</button>`;
 							})
 							.join("")}
+					</div>
+					<div class="abh-sheet-actions">
+						<button type="button" data-action="apply-filter-sheet" data-sheet-type="${frappe.utils.escape_html(
+							type
+						)}">${frappe.utils.escape_html(this.t("done"))}</button>
 					</div>
 				</div>
 			</div>`
@@ -417,12 +440,12 @@ const clf_dashboard = {
 		frappe.call({
 			method: "nomination.api.dashboard.get_dashboard_nomination_rows",
 			args: {
-				stage_key: this.stageKey,
+				stage_key: this.stage_filter_value(),
 				page: this.page,
 				page_size: this.pageSize,
 				search: this.search,
-				vo: this.vo,
-				shg: this.shg,
+				vo: this.vo.join(","),
+				shg: this.shg.join(","),
 				sort_by: this.sortBy,
 			},
 			callback: (r) => {
@@ -490,6 +513,7 @@ const clf_dashboard = {
 		this.page = state.page;
 		this.pageSize = state.pageSize;
 		this.search = state.search;
+		this.selectedStages = state.selectedStages;
 		this.vo = state.vo;
 		this.shg = state.shg;
 		this.sortBy = state.sortBy;
@@ -535,11 +559,15 @@ const clf_dashboard = {
 		return {
 			view: "list",
 			stageKey: stageKey || "shg_approved",
+			selectedStages: this.parse_multi_param(
+				params.get("stage_filter") || params.get("stage"),
+				this.normalize_stage.bind(this)
+			).filter((key) => key !== "all"),
 			page,
 			pageSize,
 			search: params.get("search") || "",
-			vo: params.get("vo") || "",
-			shg: params.get("shg") || "",
+			vo: this.parse_multi_param(params.get("vo")),
+			shg: this.parse_multi_param(params.get("shg")),
 			sortBy,
 		};
 	},
@@ -561,8 +589,9 @@ const clf_dashboard = {
 		if (this.page > 1) params.set("page", String(this.page));
 		if (this.pageSize !== 20) params.set("page_size", String(this.pageSize));
 		if (this.search) params.set("search", this.search);
-		if (this.vo) params.set("vo", this.vo);
-		if (this.shg) params.set("shg", this.shg);
+		if (this.selectedStages.length) params.set("stage_filter", this.selectedStages.join(","));
+		if (this.vo.length) params.set("vo", this.vo.join(","));
+		if (this.shg.length) params.set("shg", this.shg.join(","));
 		if (this.sortBy !== "modified") params.set("sort_by", this.sortBy);
 		this.replace_route(`/app/clf-dashboard?${params.toString()}`);
 	},
@@ -648,9 +677,14 @@ const clf_dashboard = {
 	render_list() {
 		const total = this.num(this.listData.total);
 		const totalPages = Math.max(1, Math.ceil(total / this.pageSize));
-		const rangeStart = total ? (this.page - 1) * this.pageSize + 1 : 0;
-		const rangeEnd = Math.min(this.page * this.pageSize, total);
-		const title = this.t(this.stageKey);
+		const isAllStageView = !this.selectedStages.length;
+		const title =
+			this.selectedStages.length > 1
+				? this.filter_label(
+						this.t("all_nomination"),
+						this.selectedStages.map((key) => this.t(key))
+				  )
+				: this.t(this.stageKey);
 		const rows = this.listData.rows || [];
 
 		$("#abh-list-view").html(`
@@ -671,12 +705,12 @@ const clf_dashboard = {
 				<div class="abh-tabs-row">
 					<div class="abh-tabs">
 						<button class="abh-tab ${
-							this.stageKey === "all" ? "active" : ""
+							isAllStageView ? "active" : ""
 						}" type="button" data-stage-tab="all">${frappe.utils.escape_html(
 			this.t("all")
 		)}</button>
 						<button class="abh-tab ${
-							this.stageKey !== "all" ? "active" : ""
+							!isAllStageView ? "active" : ""
 						}" type="button" data-stage-tab="shg_approved">${frappe.utils.escape_html(
 			this.t("nomination_tab")
 		)}</button>
@@ -734,16 +768,19 @@ const clf_dashboard = {
 				<div class="abh-pager">
 					<button type="button" ${this.page <= 1 ? "disabled" : ""} data-page="${
 			this.page - 1
-		}">${frappe.utils.escape_html(this.t("prev"))}</button>
+		}"><span aria-hidden="true">←</span>${frappe.utils.escape_html(this.t("prev"))}</button>
 					<span>${frappe.utils.escape_html(
-						this.t("showing_range")
-							.replace("{0}", this.format_number(rangeStart))
-							.replace("{1}", this.format_number(rangeEnd))
-							.replace("{2}", this.format_number(total))
+						this.t("page_of")
+							.replace("{0}", this.format_number(this.page))
+							.replace("{1}", this.format_number(totalPages))
 					)}</span>
 					<button type="button" ${this.page >= totalPages ? "disabled" : ""} data-page="${
 			this.page + 1
-		}">${frappe.utils.escape_html(this.t("next"))}</button>
+		}">${frappe.utils.escape_html(this.t("next"))}<span aria-hidden="true">→</span></button>
+					<button class="abh-show-all" type="button" data-page-size="${Math.max(
+						total,
+						this.pageSize
+					)}">${frappe.utils.escape_html(this.t("show_all"))}</button>
 				</div>
 			</div>
 		`);
@@ -762,7 +799,15 @@ const clf_dashboard = {
 
 	stage_select() {
 		const config = this.filter_sheet_config("stage");
-		return this.custom_select("stage", this.t(this.stageKey), config.options, this.stageKey);
+		return this.custom_select(
+			"stage",
+			this.filter_label(
+				this.t("all_nomination"),
+				this.selectedStages.map((key) => this.t(key))
+			),
+			config.options,
+			this.selectedStages
+		);
 	},
 
 	option_select(key, placeholder, options, selected) {
@@ -770,18 +815,58 @@ const clf_dashboard = {
 			{ value: "", label: placeholder },
 			...options.map((option) => ({ value: option, label: option })),
 		];
-		const label = selected || placeholder;
+		const label = this.filter_label(placeholder, selected);
 		return this.custom_select(key, label, items, selected);
+	},
+
+	parse_multi_param(value, normalizer) {
+		return String(value || "")
+			.split(",")
+			.map((item) => item.trim())
+			.filter(Boolean)
+			.map((item) => (normalizer ? normalizer(item) : item))
+			.filter(Boolean);
+	},
+
+	stage_filter_value() {
+		return this.selectedStages.length ? this.selectedStages.join(",") : "all";
+	},
+
+	filter_label(placeholder, selected) {
+		const values = Array.isArray(selected) ? selected : selected ? [selected] : [];
+		if (!values.length) return placeholder;
+		if (values.length === 1) return values[0];
+		return `${values.length} selected`;
+	},
+
+	apply_filter_sheet(type) {
+		const selected = $("#abh-filter-sheet [data-dropdown-option].active")
+			.map((_, el) => String($(el).data("value") || ""))
+			.get()
+			.filter(Boolean);
+
+		if (type === "stage") {
+			this.selectedStages = selected
+				.map((value) => this.normalize_stage(value))
+				.filter(Boolean);
+			this.stageKey = this.selectedStages.length === 1 ? this.selectedStages[0] : "all";
+		} else if (type === "vo" || type === "shg") {
+			this[type] = selected;
+		}
+
+		this.close_filter_sheet();
+		this.page = 1;
+		this.load_list();
 	},
 
 	filter_sheet_config(type) {
 		if (type === "stage") {
 			return {
 				title: this.lang === "hi" ? "स्थिति चुनें" : "Choose Status",
-				selected: this.stageKey,
-				options: ["all", "shg_approved", "vo_approved", "clf_approved"].map((key) => ({
+				selected: this.selectedStages,
+				options: ["", "shg_approved", "vo_approved", "clf_approved"].map((key) => ({
 					value: key,
-					label: key === "all" ? this.t("all_nomination") : this.t(key),
+					label: key === "" ? this.t("all_nomination") : this.t(key),
 				})),
 			};
 		}
