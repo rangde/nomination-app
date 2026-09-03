@@ -3,6 +3,10 @@ import re
 import frappe
 import requests
 
+# (connect, read): the host resolves to several addresses, so a blackholed route
+# is retried per address and a single combined timeout stalls the whole request
+REQUEST_TIMEOUT = (3, 10)
+
 
 def strip_country_code(mobile_number):
 	"""Return the bare 10-digit number, or None if the input isn't one.
@@ -39,12 +43,28 @@ def rangde_headers():
 	return frappe.conf.get("rangde_headers", {})
 
 
+def _response_summary(response):
+	return (
+		f"Status: {response.status_code}\n"
+		f"Content-Type: {response.headers.get('content-type')}\n"
+		f"Body: {response.text[:1000]}"
+	)
+
+
+def _json_response(response, error_title):
+	try:
+		return response.json()
+	except ValueError:
+		frappe.log_error(_response_summary(response), error_title)
+		frappe.throw("RangDe API returned an invalid response")
+
+
 def initiate_session():
 	url = f"{get_base_url()}/login"
 
 	headers = rangde_headers()
 
-	response = requests.get(url, headers=headers, timeout=10)
+	response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 
 	if response.status_code != 200:
 		frappe.throw("Failed to initiate RangDe session")
@@ -84,7 +104,7 @@ def _post(endpoint, data, retry=True):
 
 	url = f"{get_base_url()}/{endpoint}"
 
-	response = requests.post(url, headers=headers, data=payload, timeout=10)
+	response = requests.post(url, headers=headers, data=payload, timeout=REQUEST_TIMEOUT)
 
 	if response.status_code == 401 and retry:
 		initiate_session()
@@ -94,7 +114,7 @@ def _post(endpoint, data, retry=True):
 		frappe.log_error(f"RangDe API error: {response.text}", "RangDe Service Error")
 		frappe.throw("RangDe API request failed")
 
-	return response.json()
+	return _json_response(response, "RangDe Invalid JSON Response")
 
 
 def request_otp(mobileNumber):
@@ -126,8 +146,21 @@ def credit_check(data):
 def get_metrics():
 	headers = rangde_headers()
 	url = f"{get_base_url()}/borrower-nomination/metrics"
-	response = requests.get(url, headers=headers, timeout=10)
-	return response.json()
+	try:
+		response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+	except requests.RequestException:
+		frappe.log_error(frappe.get_traceback(), "RangDe Metrics Request Failed")
+		return {}
+
+	if response.status_code != 200:
+		frappe.log_error(_response_summary(response), "RangDe Metrics API Error")
+		return {}
+
+	try:
+		return response.json()
+	except ValueError:
+		frappe.log_error(_response_summary(response), "RangDe Metrics Invalid JSON Response")
+		return {}
 
 
 def get_user_name(fallback_identifier=None):

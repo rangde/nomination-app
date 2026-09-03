@@ -19,7 +19,6 @@ def user_validation(mobile_number, credit_check=False):
 		user = frappe.db.get_value("User", {"mobile_no": mobile_number}, "name")
 		if not user:
 			return {"status": 0, "msg": "Mobile number not registered"}
-
 		auth_token, csrf_token = get_tokens()
 		if not auth_token or not csrf_token:
 			initiate_session()
@@ -38,13 +37,21 @@ def send_otp_internal(mobile_number):
 		frappe.throw("OTP service is temporarily unavailable. Please try again later.")
 
 
+def verify_otp_internal(mobile_number, otp):
+	try:
+		return verify_otp(mobile_number, otp)
+	except Exception:
+		frappe.log_error(frappe.get_traceback(), "RangDe OTP Verification Error")
+		frappe.throw("OTP service is temporarily unavailable. Please try again later.")
+
+
 @frappe.whitelist(allow_guest=True)
 def verify_user_otp(mobile_number, otp, credit_check=False):
 	mobile_number = strip_country_code(mobile_number)
 	if not mobile_number:
 		return {"status": 0, "msg": "Please enter a valid 10-digit mobile number"}
 
-	result = verify_otp(mobile_number, otp)
+	result = verify_otp_internal(mobile_number, otp)
 	messages = result.get("messages", [])
 
 	if not messages or messages[0].get("code") != "1":
