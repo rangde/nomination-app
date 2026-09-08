@@ -12,9 +12,9 @@ frappe.pages["clf-dashboard"].on_page_load = function (wrapper) {
 			<div class="abh-bg-glow abh-bg-glow-three" aria-hidden="true"></div>
 			<div class="abh-shell">
 				<header class="abh-header">
-					<button class="abh-header-back" type="button" data-action="back-dashboard">
+					<button class="abh-header-back" type="button" data-action="navigate-back">
 						<span aria-hidden="true">←</span>
-						<span data-i18n="back_dashboard">Dashboard</span>
+						<span data-i18n="back">Back</span>
 					</button>
 					<div class="abh-brand">
 						<div class="abh-brand-mark" aria-hidden="true">अ</div>
@@ -154,7 +154,7 @@ const clf_dashboard = {
 			open_list: "Open list",
 			view_details: "View details",
 			unavailable: "Not available",
-			back_dashboard: "Dashboard",
+			back: "Back",
 			all: "All",
 			all_nomination: "All Nomination",
 			nomination_tab: "Nomination",
@@ -215,7 +215,7 @@ const clf_dashboard = {
 			open_list: "सूची खोलें",
 			view_details: "विवरण देखें",
 			unavailable: "उपलब्ध नहीं",
-			back_dashboard: "डैशबोर्ड",
+			back: "वापस",
 			all: "सभी",
 			all_nomination: "सभी नामांकन",
 			nomination_tab: "नामांकन",
@@ -271,14 +271,8 @@ const clf_dashboard = {
 			this.open_list($(event.currentTarget).data("stage"));
 		});
 
-		$("#clf-dashboard-root").on("click", "[data-action='back-dashboard']", () => {
-			if (this.view !== "list") return;
-			this.view = "dashboard";
-			$("#clf-dashboard-root").removeClass("abh-list-mode");
-			$("#abh-list-view").hide();
-			$("#abh-dashboard-view").show();
-			this.update_dashboard_route();
-			this.render();
+		$("#clf-dashboard-root").on("click", "[data-action='navigate-back']", () => {
+			frappe.set_route("List", "Nomination Form", "List");
 		});
 
 		$("#clf-dashboard-root").on("click", "[data-stage-tab]", (event) => {
