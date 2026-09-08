@@ -272,6 +272,15 @@ const clf_dashboard = {
 		});
 
 		$("#clf-dashboard-root").on("click", "[data-action='navigate-back']", () => {
+			if (this.view === "list") {
+				this.view = "dashboard";
+				$("#clf-dashboard-root").removeClass("abh-list-mode");
+				$("#abh-list-view").hide();
+				$("#abh-dashboard-view").show();
+				this.update_dashboard_route();
+				this.render();
+				return;
+			}
 			frappe.set_route("List", "Nomination Form", "List");
 		});
 
