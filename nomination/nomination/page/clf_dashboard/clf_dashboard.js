@@ -885,9 +885,9 @@ const clf_dashboard = {
 			return {
 				title: this.lang === "hi" ? "स्थिति चुनें" : "Choose Status",
 				selected: this.selectedStages,
-				options: ["", "shg_approved", "vo_approved", "clf_approved"].map((key) => ({
-					value: key,
-					label: key === "" ? this.t("all_nomination") : this.t(key),
+				options: this.stageKeys.map((key) => ({
+					value: key === "all" ? "" : key,
+					label: key === "all" ? this.t("all_nomination") : this.t(key),
 				})),
 			};
 		}
