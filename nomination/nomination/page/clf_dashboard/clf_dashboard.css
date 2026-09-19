@@ -1032,6 +1032,16 @@ body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .main-sect
 	color: var(--clf-surface);
 }
 
+#clf-dashboard-root .abh-list-disclaimer {
+	margin: -8px 0 18px;
+	padding: 12px 16px;
+	border: 1px solid var(--clf-border);
+	border-radius: 12px;
+	background: var(--clf-amber-bg);
+	color: var(--clf-text-soft);
+	font-weight: 700;
+}
+
 #clf-dashboard-root .abh-card-grid {
 	display: grid;
 	grid-template-columns: repeat(5, minmax(0, 1fr));
