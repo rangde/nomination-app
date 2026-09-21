@@ -110,9 +110,7 @@ def add_approver_rows(doc, approved_leaders):
 	"""Write the approving leaders straight into the shared approvers table.
 
 	The rows have to be on disk before apply_workflow runs, because it reloads the
-	document and drops anything unsaved. Saving the parent instead would re-run
-	validate, and set_approval_log stamps the current state's approver on every
-	save, which would overwrite whoever actually approved the previous stage.
+	document and drops anything unsaved.
 	"""
 	existing_labels = {row.name1 for row in doc.get(APPROVERS_TABLE) or []}
 	idx = len(doc.get(APPROVERS_TABLE) or [])
