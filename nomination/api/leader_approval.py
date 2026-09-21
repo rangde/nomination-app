@@ -246,7 +246,7 @@ def verify_leader_otp(mobile_number, otp, role, level=DEFAULT_LEVEL, nomination_
 			"Leader OTP Verification Failed",
 		)
 		frappe.response.http_status_code = 417
-		frappe.cache().delete_value(_approved_key(level, role))
+		frappe.cache().delete_value(_approved_key(level, role, nomination_name))
 		return {"status": 0, "msg": "Incorrect OTP, please enter the correct OTP"}
 
 	# the timestamp is taken here so a wrong device clock cannot stamp an approval

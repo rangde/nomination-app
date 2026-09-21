@@ -4,6 +4,12 @@ fail_fast: false
 
 
 repos:
+
+  - repo: https://github.com/aerele/lens-cli
+    rev: v0.1.0
+    hooks:
+      - id: lens-scan
+  
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:

@@ -36,6 +36,8 @@ def get_roles():
 
 @frappe.whitelist()
 def get_user_hierarchy():
+	frappe.only_for(["System Manager", "Read only"])
+
 	rows = frappe.get_all(
 		"User",
 		fields=["name", "full_name", "reports_to"],
