@@ -1,8 +1,9 @@
 import json
 
 import frappe
+from frappe import _
 from frappe.model.workflow import apply_workflow
-from frappe.utils import cint, flt
+from frappe.utils import cint, flt, get_fullname
 
 from .credit_report import generate_credit_report
 from .didi_photo import save_didi_photo
@@ -77,6 +78,8 @@ def get_nomination_form(name):
 	if not frappe.db.exists("Nomination Form", name):
 		return {"status": 0, "msg": "Document not found"}
 	nomi_doc = frappe.get_doc("Nomination Form", name)
+	if not _can_view_nomination(nomi_doc):
+		frappe.throw(_("Not permitted to view this nomination"), frappe.PermissionError)
 
 	data = nomi_doc.as_dict()
 	data["approved_leaders"] = get_doc_approved_leaders(nomi_doc)
@@ -88,6 +91,19 @@ def get_nomination_form(name):
 		data["pan_number"] = mask_pan(data["pan_number"])
 
 	return {"status": 1, "msg": [data]}
+
+
+def _can_view_nomination(doc):
+	"""VO, CLF and admins review every nomination; an SHG only sees its own."""
+	if not frappe.has_permission("Nomination Form", "read", doc=doc):
+		return False
+
+	user = frappe.session.user
+	roles = set(frappe.get_roles(user))
+	if roles & {"System Manager", "Read only", "VO", "CLF"}:
+		return True
+
+	return doc.owner == user or doc.shg_approval_by == get_fullname(user)
 
 
 def add_approver_rows(doc, approved_leaders):
