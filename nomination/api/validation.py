@@ -1,6 +1,7 @@
 import re
 
 import frappe
+from frappe import _
 from frappe.utils import add_years, getdate, nowdate
 
 # Multiplication table
@@ -51,7 +52,7 @@ def validate_pan_number(pan_number):
 		frappe.throw("PAN number must be 10 characters")
 
 	if pan_no[3] not in valid_types:
-		frappe.thorw("Invalid PAN number tyep")
+		frappe.throw(_("Invalid PAN number type"))
 	if not re.match(pattern, pan_no):
 		frappe.throw("Invalid PAN format")
 
