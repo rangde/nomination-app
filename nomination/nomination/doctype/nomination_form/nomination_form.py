@@ -34,6 +34,11 @@ class NominationForm(Document):
 			validate_date_of_birth(self.date_of_birth)
 
 	def set_approval_log(self):
+		# stamp only on the transition into a state, so later saves (e.g. a VO leader
+		# OTP approval) don't overwrite who approved the current stage
+		if not self.has_value_changed("workflow_state"):
+			return
+
 		current_user = frappe.session.user
 		current_time = frappe.utils.now()
 
