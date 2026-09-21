@@ -12,9 +12,9 @@ frappe.pages["clf-dashboard"].on_page_load = function (wrapper) {
 			<div class="abh-bg-glow abh-bg-glow-three" aria-hidden="true"></div>
 			<div class="abh-shell">
 				<header class="abh-header">
-					<button class="abh-header-back" type="button" data-action="back-dashboard">
+					<button class="abh-header-back" type="button" data-action="navigate-back">
 						<span aria-hidden="true">←</span>
-						<span data-i18n="back_dashboard">Dashboard</span>
+						<span data-i18n="back">Back</span>
 					</button>
 					<div class="abh-brand">
 						<div class="abh-brand-mark" aria-hidden="true">अ</div>
@@ -114,6 +114,11 @@ const clf_dashboard = {
 	collapsedCardLimit: 10,
 	showAllCards: false,
 	stageKeys: ["all", "shg_approved", "vo_pending", "vo_approved", "clf_pending", "clf_approved"],
+	// "Pending" is not stored; it relabels the previous stage's "Approved" records.
+	synonymousStages: [
+		{ workflowState: "SHG Proposed", approved: "shg_approved", pending: "vo_pending" },
+		{ workflowState: "VO Approved", approved: "vo_approved", pending: "clf_pending" },
+	],
 	selectedStages: [],
 	counterFrame: null,
 	search: "",
@@ -154,7 +159,7 @@ const clf_dashboard = {
 			open_list: "Open list",
 			view_details: "View details",
 			unavailable: "Not available",
-			back_dashboard: "Dashboard",
+			back: "Back",
 			all: "All",
 			all_nomination: "All Nomination",
 			nomination_tab: "Nomination",
@@ -184,6 +189,8 @@ const clf_dashboard = {
 			page_of: "Page {0} of {1}",
 			showing_range: "{0} - {1} of {2}",
 			no_records: "No records found.",
+			synonymous_disclaimer:
+				"{0} and {1} show the same nominations, cards are currently labeled {0}.",
 		},
 		hi: {
 			kicker: "CLF अवलोकन",
@@ -215,7 +222,7 @@ const clf_dashboard = {
 			open_list: "सूची खोलें",
 			view_details: "विवरण देखें",
 			unavailable: "उपलब्ध नहीं",
-			back_dashboard: "डैशबोर्ड",
+			back: "वापस",
 			all: "सभी",
 			all_nomination: "सभी नामांकन",
 			nomination_tab: "नामांकन",
@@ -245,6 +252,8 @@ const clf_dashboard = {
 			page_of: "पेज {0} / {1}",
 			showing_range: "{0} - {1} / {2}",
 			no_records: "कोई रिकॉर्ड नहीं मिला।",
+			synonymous_disclaimer:
+				"{0} और {1} में एक जैसे नामांकन हैं, कार्ड पर अभी {0} दिखाया गया है।",
 		},
 	},
 
@@ -271,14 +280,17 @@ const clf_dashboard = {
 			this.open_list($(event.currentTarget).data("stage"));
 		});
 
-		$("#clf-dashboard-root").on("click", "[data-action='back-dashboard']", () => {
-			if (this.view !== "list") return;
-			this.view = "dashboard";
-			$("#clf-dashboard-root").removeClass("abh-list-mode");
-			$("#abh-list-view").hide();
-			$("#abh-dashboard-view").show();
-			this.update_dashboard_route();
-			this.render();
+		$("#clf-dashboard-root").on("click", "[data-action='navigate-back']", () => {
+			if (this.view === "list") {
+				this.view = "dashboard";
+				$("#clf-dashboard-root").removeClass("abh-list-mode");
+				$("#abh-list-view").hide();
+				$("#abh-dashboard-view").show();
+				this.update_dashboard_route();
+				this.render();
+				return;
+			}
+			frappe.set_route("List", "Nomination Form", "List");
 		});
 
 		$("#clf-dashboard-root").on("click", "[data-stage-tab]", (event) => {
@@ -768,6 +780,8 @@ const clf_dashboard = {
 					</div>
 				</div>
 
+				${this.synonymous_disclaimers()}
+
 				<div class="abh-card-grid">
 					${
 						rows.length
@@ -812,6 +826,23 @@ const clf_dashboard = {
 				}
 			</div>
 		`);
+	},
+
+	synonymous_disclaimers() {
+		return this.synonymousStages
+			.filter(
+				({ approved, pending }) =>
+					this.selectedStages.includes(approved) && this.selectedStages.includes(pending)
+			)
+			.map(
+				({ approved, pending }) =>
+					`<div class="abh-list-disclaimer">${frappe.utils.escape_html(
+						this.t("synonymous_disclaimer")
+							.replaceAll("{0}", this.t(approved))
+							.replaceAll("{1}", this.t(pending))
+					)}</div>`
+			)
+			.join("");
 	},
 
 	stage_select() {
@@ -882,9 +913,9 @@ const clf_dashboard = {
 			return {
 				title: this.lang === "hi" ? "स्थिति चुनें" : "Choose Status",
 				selected: this.selectedStages,
-				options: ["", "shg_approved", "vo_approved", "clf_approved"].map((key) => ({
-					value: key,
-					label: key === "" ? this.t("all_nomination") : this.t(key),
+				options: this.stageKeys.map((key) => ({
+					value: key === "all" ? "" : key,
+					label: key === "all" ? this.t("all_nomination") : this.t(key),
 				})),
 			};
 		}
@@ -989,7 +1020,7 @@ const clf_dashboard = {
 					</div>
 					${this.modal_section(
 						"nomination_tab",
-						this.stageKey,
+						this.row_status_key(row),
 						[
 							[this.t("group"), row.name_of_the_shg || "-"],
 							[this.t("vo"), row.name_of_the_vo || "-"],
@@ -1062,10 +1093,15 @@ const clf_dashboard = {
 	},
 
 	row_status_key(row) {
-		if (this.stageKey !== "all") return this.stageKey;
-		if (row.workflow_state === "VO Approved") return "vo_approved";
 		if (row.workflow_state === "CLF Approved") return "clf_approved";
-		return "shg_approved";
+		const stage =
+			this.synonymousStages.find((item) => item.workflowState === row.workflow_state) ||
+			this.synonymousStages[0];
+		// Approved wins unless only the Pending synonym is filtered.
+		const pendingOnly =
+			this.selectedStages.includes(stage.pending) &&
+			!this.selectedStages.includes(stage.approved);
+		return pendingOnly ? stage.pending : stage.approved;
 	},
 
 	date_label(value) {

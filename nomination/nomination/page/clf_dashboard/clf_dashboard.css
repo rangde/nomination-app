@@ -1,33 +1,34 @@
-body,
-.layout-main-section,
-.page-container {
+/* Frappe caches hidden pages, so shell overrides must follow the active route. */
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]),
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .layout-main-section,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .page-container {
 	background: #f7f2e8;
 }
 
-body:has(#clf-dashboard-root) .page-head,
-body:has(#clf-dashboard-root) .layout-side-section,
-body:has(#clf-dashboard-root) .standard-sidebar,
-body:has(#clf-dashboard-root) .desk-sidebar,
-body:has(#clf-dashboard-root) .body-sidebar-container,
-body:has(#clf-dashboard-root) .body-sidebar,
-body:has(#clf-dashboard-root) .body-sidebar-placeholder {
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .page-head,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .layout-side-section,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .standard-sidebar,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .desk-sidebar,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .body-sidebar-container,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .body-sidebar,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .body-sidebar-placeholder {
 	display: none !important;
 }
 
-body:has(#clf-dashboard-root) {
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) {
 	--sidebar-width: 0px;
 }
 
-body:has(#clf-dashboard-root) .layout-main,
-body:has(#clf-dashboard-root) .layout-main-section-wrapper,
-body:has(#clf-dashboard-root) .layout-main-section {
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .layout-main,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .layout-main-section-wrapper,
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .layout-main-section {
 	width: 100% !important;
 	max-width: none !important;
 	margin: 0 !important;
 	padding: 0 !important;
 }
 
-body:has(#clf-dashboard-root) .main-section {
+body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .main-section {
 	background: #f7f2e8;
 }
 
@@ -143,7 +144,6 @@ body:has(#clf-dashboard-root) .main-section {
 }
 
 #clf-dashboard-root .abh-header-back {
-	visibility: hidden;
 	width: 178px;
 	height: 64px;
 	border-radius: 14px;
@@ -157,10 +157,6 @@ body:has(#clf-dashboard-root) .main-section {
 	font-weight: 800;
 	transition: transform .12s ease, box-shadow .18s ease;
 	justify-self: start;
-}
-
-#clf-dashboard-root.abh-list-mode .abh-header-back {
-	visibility: visible;
 }
 
 #clf-dashboard-root .abh-brand {
@@ -1034,6 +1030,16 @@ body:has(#clf-dashboard-root) .main-section {
 #clf-dashboard-root .abh-sort button.active {
 	background: var(--clf-text);
 	color: var(--clf-surface);
+}
+
+#clf-dashboard-root .abh-list-disclaimer {
+	margin: -8px 0 18px;
+	padding: 12px 16px;
+	border: 1px solid var(--clf-border);
+	border-radius: 12px;
+	background: var(--clf-amber-bg);
+	color: var(--clf-text-soft);
+	font-weight: 700;
 }
 
 #clf-dashboard-root .abh-card-grid {
