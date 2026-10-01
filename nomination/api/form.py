@@ -9,6 +9,7 @@ from .credit_report import generate_credit_report
 from .didi_photo import save_didi_photo
 from .leader_approval import (
 	DEFAULT_LEVEL,
+	LEADER_APPROVAL_REQUIRED,
 	LEADER_ROLES,
 	MIN_APPROVALS,
 	clear_approvals,
@@ -393,7 +394,7 @@ def approve_form(name, credit_limit):
 			for leader in get_approved_leaders(level, name):
 				approvals_by_role[leader["role"]] = leader
 			approved_leaders = list(approvals_by_role.values())
-		if level and len(approved_leaders) < MIN_APPROVALS:
+		if LEADER_APPROVAL_REQUIRED and level and len(approved_leaders) < MIN_APPROVALS:
 			return {
 				"status": 0,
 				"msg": f"Any {MIN_APPROVALS} of {len(LEADER_ROLES)} {level} leaders must approve via OTP",
@@ -502,7 +503,7 @@ def submit_nomination(payload):
 		approvals_by_role[leader["role"]] = leader
 
 	approved_leaders = list(approvals_by_role.values())
-	if len(approved_leaders) < MIN_APPROVALS:
+	if LEADER_APPROVAL_REQUIRED and len(approved_leaders) < MIN_APPROVALS:
 		return {
 			"status": 0,
 			"msg": f"Any {MIN_APPROVALS} of {len(LEADER_ROLES)} SHG leaders must approve via OTP",

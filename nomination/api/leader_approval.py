@@ -15,6 +15,11 @@ DEFAULT_LEVEL = "SHG"
 
 MIN_APPROVALS = 2
 
+# TEMPORARY: field teams are struggling to collect OTP approvals from 2 of 3
+# office bearers, so the leader approval step is optional at every level
+# (SHG, VO, CLF) for now. Set back to True to enforce it again.
+LEADER_APPROVAL_REQUIRED = False
+
 # a leader approval stays valid long enough to finish the credit step and submit
 APPROVAL_TTL_SEC = 3600
 
