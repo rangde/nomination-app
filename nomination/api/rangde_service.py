@@ -106,12 +106,14 @@ def _post(endpoint, data, retry=True):
 
 	response = requests.post(url, headers=headers, data=payload, timeout=REQUEST_TIMEOUT)
 
-	if response.status_code == 401 and retry:
+	# cached tokens outlive RangDe sessions revoked on their side; an expired session
+	# can surface as 403 (stale CSRF token) rather than 401, so refresh on either
+	if response.status_code in (401, 403) and retry:
 		initiate_session()
 		return _post(endpoint, data, retry=False)
 
 	if response.status_code != 200:
-		frappe.log_error(f"RangDe API error: {response.text}", "RangDe Service Error")
+		frappe.log_error(f"Endpoint: {endpoint}\n{_response_summary(response)}", "RangDe Service Error")
 		frappe.throw("RangDe API request failed")
 
 	return _json_response(response, "RangDe Invalid JSON Response")
