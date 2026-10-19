@@ -1,0 +1,60 @@
+{% extends "templates/web.html" %}
+{% set title = _("CLF Dashboard") %}
+{% set full_width = true %}
+{% set no_breadcrumbs = true %}
+
+{% block page_content %}
+<main id="public-dashboard" aria-labelledby="dashboard-title">
+	<header class="dashboard-header">
+		<div class="dashboard-brand">
+			<span class="dashboard-mark" aria-hidden="true">अ</span>
+			<div>
+				<h1 id="dashboard-title">{{ _("CLF Dashboard") }}</h1>
+				<p>{{ _("Nomination, training and loan progress at a glance.") }}</p>
+			</div>
+		</div>
+		<button id="dashboard-refresh" type="button">{{ _("Refresh") }}</button>
+	</header>
+	<p id="dashboard-status" role="status" aria-live="polite">{{ _("Loading metrics…") }}</p>
+	<div id="dashboard-metrics" aria-busy="true">
+		{% for section, heading, cards in [
+			("nomination", _("Nomination Journey"), [
+				("shg_approved", _("SHG Approved")),
+				("vo_pending", _("VO Pending")),
+				("vo_approved", _("VO Approved")),
+				("clf_pending", _("CLF Pending")),
+				("clf_approved", _("CLF Approved"))
+			]),
+			("training", _("Training & Assessment"), [
+				("total_registered", _("Total Registered")),
+				("under_training", _("Under Training")),
+				("passed", _("Passed")),
+				("failed", _("Failed"))
+			]),
+			("loan", _("Loan Process"), [
+				("loan_applicants", _("Loan Applicants")),
+				("loan_disbursed", _("Loans Disbursed")),
+				("amount_disbursed", _("Amount Disbursed (₹)")),
+				("median_days", _("Median Days to Disbursal"))
+			])
+		] %}
+		<section class="dashboard-section {{ section }}" aria-labelledby="heading-{{ section }}">
+			<h2 id="heading-{{ section }}">{{ heading }}</h2>
+			<dl class="metric-grid">
+				{% for key, label in cards %}
+				<div class="metric-card">
+					<dt>{{ label }}</dt>
+					<dd data-section="{{ section }}" data-metric="{{ key }}">—</dd>
+				</div>
+				{% endfor %}
+			</dl>
+			{% if section == "nomination" %}
+			<p class="dashboard-note">{{ _("SHG Approved and VO Pending show the same nominations. VO Approved and CLF Pending also show the same nominations; these counts should not be added together.") }}</p>
+			{% endif %}
+		</section>
+		{% endfor %}
+	</div>
+	<p class="dashboard-note">{{ _("Site-wide summary · Updates every minute · Unavailable metrics are shown as —") }}</p>
+	<noscript><p>{{ _("Please enable JavaScript to load the dashboard metrics.") }}</p></noscript>
+</main>
+{% endblock %}
