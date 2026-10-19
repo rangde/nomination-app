@@ -167,6 +167,11 @@ def get_nomination_list():
 def get_dashboard_metrics():
 	metrics = get_metrics()
 	owners = _nomination_owner_scope_for_session()
+	return _build_dashboard_metrics(metrics, owners)
+
+
+def _build_dashboard_metrics(metrics, owners):
+	"""Build summary counts using the caller's explicit nomination owner scope."""
 
 	return {
 		"nomination": {

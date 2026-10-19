@@ -1,0 +1,135 @@
+#public-dashboard {
+	max-width: 1192px;
+	margin: 24px auto;
+	padding: 32px;
+	border: 1px solid #e3ddcf;
+	border-radius: 24px;
+	background: linear-gradient(160deg, #f7f2e8, #f3f1e6);
+	color: #1a1a1a;
+}
+
+#public-dashboard .dashboard-header,
+#public-dashboard .dashboard-brand {
+	display: flex;
+	align-items: center;
+	gap: 18px;
+}
+
+#public-dashboard .dashboard-header {
+	justify-content: space-between;
+	flex-wrap: wrap;
+	margin-bottom: 20px;
+}
+
+#public-dashboard .dashboard-mark {
+	display: grid;
+	place-items: center;
+	flex-shrink: 0;
+	width: 52px;
+	height: 52px;
+	border-radius: 16px;
+	background: #2a1215;
+	color: #fff;
+	font-size: 28px;
+}
+
+#public-dashboard h1 {
+	font-size: clamp(24px, 4vw, 34px);
+	margin: 0 0 6px;
+}
+
+#public-dashboard .dashboard-header p {
+	margin: 0;
+	color: #666;
+}
+
+#dashboard-refresh {
+	padding: 10px 22px;
+	border: 1px solid #d8d2c2;
+	border-radius: 12px;
+	background: #fff;
+	color: #2a1215;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+#dashboard-refresh:focus-visible {
+	outline: 3px solid #3767be;
+	outline-offset: 3px;
+}
+
+#dashboard-refresh:disabled {
+	opacity: 0.6;
+	cursor: wait;
+}
+
+#dashboard-status {
+	min-height: 24px;
+	color: #666;
+	font-size: 14px;
+}
+
+#dashboard-status.has-error {
+	color: #a12d2d;
+}
+
+#public-dashboard .dashboard-section {
+	margin: 28px 0;
+	--metric-color: #305bb0;
+}
+
+#public-dashboard .training { --metric-color: #377149; }
+#public-dashboard .loan { --metric-color: #94621b; }
+
+#public-dashboard h2 {
+	font-size: 20px;
+	margin: 0 0 16px;
+	padding-left: 12px;
+	border-left: 4px solid var(--metric-color);
+}
+
+#public-dashboard .metric-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+	gap: 14px;
+	margin: 0;
+}
+
+#public-dashboard .metric-card {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 20px;
+	padding: 22px 18px;
+	border: 1px solid #e3ddcf;
+	border-radius: 16px;
+	background: #fff;
+}
+
+#public-dashboard dt {
+	font-size: 14px;
+	font-weight: 500;
+	color: #555;
+}
+
+#public-dashboard dd {
+	margin: 0;
+	font-size: clamp(24px, 3vw, 32px);
+	font-weight: 700;
+	color: var(--metric-color);
+	overflow-wrap: anywhere;
+	font-variant-numeric: tabular-nums;
+}
+
+#public-dashboard .dashboard-note {
+	margin-top: 14px;
+	font-size: 13px;
+	color: #666;
+	line-height: 1.6;
+}
+
+@media (max-width: 600px) {
+	#public-dashboard { padding: 20px 16px; margin: 12px 0; }
+	#public-dashboard .metric-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	#public-dashboard .metric-card { padding: 16px 12px; }
+}
