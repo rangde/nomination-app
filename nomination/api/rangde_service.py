@@ -165,6 +165,27 @@ def get_metrics():
 		return {}
 
 
+def get_nominees():
+	"""Return the RangDe nominee list, or None when the request fails."""
+	headers = rangde_headers()
+	url = f"{get_base_url()}/borrower-nomination/list"
+	try:
+		response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+	except requests.RequestException:
+		frappe.log_error(frappe.get_traceback(), "RangDe Nominee List Request Failed")
+		return None
+
+	if response.status_code != 200:
+		frappe.log_error(_response_summary(response), "RangDe Nominee List API Error")
+		return None
+
+	try:
+		return (response.json() or {}).get("nominees") or []
+	except ValueError:
+		frappe.log_error(_response_summary(response), "RangDe Nominee List Invalid JSON Response")
+		return None
+
+
 def get_user_name(fallback_identifier=None):
 	user = frappe.session.user
 	if user and user != "Guest":
