@@ -1,7 +1,11 @@
+import re
+from datetime import datetime
+from zoneinfo import ZoneInfo
+
 import frappe
 from frappe.utils import get_fullname
 
-from nomination.api.rangde_service import get_metrics
+from nomination.api.rangde_service import get_metrics, get_nominees
 
 dashboard_access = {"System Manager", "Read only"}
 
@@ -184,6 +188,8 @@ def _build_dashboard_metrics(metrics, owners):
 		"training": {
 			"total_registered": metrics.get("totalTrainees"),
 			"under_training": metrics.get("completedTraining"),
+			"assessment_completed": metrics.get("completedAssessment")
+			or (metrics.get("passed") or 0) + (metrics.get("failed") or 0),
 			"passed": metrics.get("passed"),
 			"failed": metrics.get("failed"),
 		},
@@ -304,3 +310,219 @@ def get_dashboard_nomination_rows(
 			"shgs": shgs,
 		},
 	}
+
+
+TRAINING_STATUSES = ("registered", "training_completed", "passed", "failed")
+LOAN_STATUSES = ("applied", "disbursed", "repaying")
+# fully repaid loans stay in the Loan tab as Repaying (RangDe's exact lpStatus values to be confirmed)
+COMPLETED_LOAN_STATUSES = ("closed", "repaid", "completed", "settled")
+NOMINATION_STATUS_BY_WORKFLOW_STATE = {
+	"SHG Proposed": "shg_approved",
+	"VO Approved": "vo_approved",
+	"CLF Approved": "clf_approved",
+}
+DIDI_TABS = ("all", "training", "loan")
+
+
+def _mobile_key(value) -> str:
+	"""RangDe stores 91XXXXXXXXXX, Nomination Form stores a plain number: match on the last 10 digits."""
+	return re.sub(r"\D", "", str(value or ""))[-10:]
+
+
+def _naive_datetime(value):
+	"""Parse a timestamp into a naive datetime in the site timezone (RangDe sends offsets / Z)."""
+	if not value:
+		return None
+	if not isinstance(value, datetime):
+		text = str(value).strip()
+		if text.endswith(("Z", "z")):
+			text = f"{text[:-1]}+00:00"
+		try:
+			value = datetime.fromisoformat(text)
+		except ValueError:
+			return None
+	if value.tzinfo is not None:
+		value = value.astimezone(ZoneInfo(frappe.utils.get_system_timezone()))
+	return value.replace(tzinfo=None)
+
+
+def _iso(value) -> str | None:
+	value = _naive_datetime(value)
+	return value.isoformat() if value else None
+
+
+def _training_status(nominee: dict) -> str:
+	result = (nominee.get("taStatus") or "").strip().lower()
+	if result in ("passed", "failed"):
+		return result
+	return "training_completed" if nominee.get("trainingCompletedDate") else "registered"
+
+
+def _loan_status(nominee: dict) -> str | None:
+	status = (nominee.get("lpStatus") or "").strip().lower()
+	if status:
+		# unknown values (Rejected, Closed, ...) are not one of the dashboard's loan stages
+		if status in COMPLETED_LOAN_STATUSES:
+			return "repaying"
+		return status if status in LOAN_STATUSES else None
+	# no lpStatus: infer from the loan dates
+	if nominee.get("lastRepaymentDate"):
+		return "repaying"
+	if nominee.get("disbursalDate"):
+		return "disbursed"
+	if nominee.get("loanId"):
+		return "applied"
+	return None
+
+
+def _didi_record(form: dict | None, nominee: dict | None, index: int = 0) -> dict:
+	"""One didi, with her current stage/status (the furthest stage she has reached)."""
+	training_status = _training_status(nominee) if nominee else None
+	loan_status = _loan_status(nominee) if nominee else None
+	nomination_status = NOMINATION_STATUS_BY_WORKFLOW_STATE.get(form.get("workflow_state")) if form else None
+
+	if loan_status:
+		stage, status = "loan", loan_status
+	elif training_status:
+		stage, status = "training", training_status
+	else:
+		stage, status = "nomination", nomination_status
+
+	form = form or {}
+	nominee = nominee or {}
+	full_name = f"{form.get('first_name') or ''} {form.get('last_name') or ''}".strip()
+	updated = [_naive_datetime(form.get("modified")), _naive_datetime(nominee.get("lastUpdated"))]
+	updated = max((d for d in updated if d), default=None)
+	created = _naive_datetime(form.get("creation")) or _naive_datetime(
+		nominee.get("trainingRegistrationDate")
+	)
+
+	return {
+		"key": form.get("name") or _mobile_key(nominee.get("mobileNumber")) or f"rangde-{index}",
+		"name": full_name or nominee.get("name") or form.get("name"),
+		"mobile": form.get("mobile_number") or nominee.get("mobileNumber"),
+		"village": form.get("townvillage"),
+		"shg": form.get("name_of_the_shg"),
+		"vo": form.get("name_of_the_vo"),
+		"photo": form.get("photo_of_didi"),
+		"stage": stage,
+		"status": status,
+		"nomination_status": nomination_status,
+		"training_status": training_status,
+		"loan_status": loan_status,
+		"nominated_on": _iso(form.get("creation")),
+		"last_updated": updated.isoformat() if updated else None,
+		"created": created.isoformat() if created else None,
+		"registered_on": nominee.get("trainingRegistrationDate"),
+		"training_completed_on": nominee.get("trainingCompletedDate"),
+		"assessed_on": nominee.get("assessCompletedDate"),
+		"requested_amount": nominee.get("requestedLoanAmount"),
+		"disbursed_amount": nominee.get("loanAmount") if loan_status in ("disbursed", "repaying") else None,
+		"disbursed_on": nominee.get("disbursalDate"),
+		"repaid_so_far": nominee.get("repaidSoFar"),
+		"last_repayment_on": nominee.get("lastRepaymentDate"),
+	}
+
+
+@frappe.whitelist()
+def get_dashboard_didi_rows(
+	tab="all", statuses=None, vo=None, shg=None, search=None, sort_by="modified", refresh=0
+):
+	"""Unified didi list across Nomination Form (local) and the RangDe nominee list (training/loan)."""
+	owners = _nomination_owner_scope_for_session()
+	if tab not in DIDI_TABS:
+		frappe.throw(frappe._("Invalid dashboard tab selected."))
+
+	nominees = get_nominees(force=bool(int(refresh or 0)))
+	if nominees is None:
+		frappe.throw(frappe._("Unable to load nominees from RangDe."))
+	nominee_by_mobile, nominees_without_mobile = {}, []
+	for nominee in nominees:
+		key = _mobile_key(nominee.get("mobileNumber"))
+		if not key:
+			nominees_without_mobile.append(nominee)
+			continue
+		existing = nominee_by_mobile.get(key)
+		# duplicate numbers are logged once per cache refresh in get_nominees(); keep the latest
+		if existing and (nominee.get("lastUpdated") or "") <= (existing.get("lastUpdated") or ""):
+			continue
+		nominee_by_mobile[key] = nominee
+
+	# only the active nomination stages, like the existing list endpoints
+	form_filters = {"workflow_state": ["in", list(NOMINATION_STATUS_BY_WORKFLOW_STATE)]}
+	if owners is not None:
+		if not owners:
+			return {"status": 1, "msg": {"rows": [], "total": 0, "vos": [], "shgs": []}}
+		form_filters["owner"] = ["in", list(owners)]
+	forms = frappe.get_all(
+		"Nomination Form",
+		fields=[
+			"name",
+			"first_name",
+			"last_name",
+			"townvillage",
+			"name_of_the_shg",
+			"name_of_the_vo",
+			"workflow_state",
+			"mobile_number",
+			"photo_of_didi",
+			"creation",
+			"modified",
+		],
+		filters=form_filters,
+		# oldest form wins when several share a mobile number
+		order_by="creation asc",
+	)
+
+	records, matched = [], set()
+	for form in forms:
+		key = _mobile_key(form.mobile_number)
+		nominee = nominee_by_mobile.get(key) if key else None
+		if nominee and key in matched:
+			# a second form with the same number must not attach to the same nominee
+			frappe.logger("nomination").warning(f"Mobile {key} is on multiple Nomination Forms")
+			nominee = None
+		elif nominee:
+			matched.add(key)
+		records.append(_didi_record(form, nominee))
+	if owners is None:
+		# RangDe-only didis (no local Nomination Form) are visible to users who see everything
+		rangde_only = [n for k, n in nominee_by_mobile.items() if k not in matched]
+		rangde_only += nominees_without_mobile
+		records += [_didi_record(None, n, index) for index, n in enumerate(rangde_only)]
+
+	if tab == "training":
+		records = [r for r in records if r["training_status"]]
+		for r in records:
+			r["stage"], r["status"] = "training", r["training_status"]
+	elif tab == "loan":
+		records = [r for r in records if r["loan_status"]]
+		for r in records:
+			r["stage"], r["status"] = "loan", r["loan_status"]
+
+	status_values = set(_as_filter_values(statuses))
+	if status_values:
+		records = [r for r in records if r["status"] in status_values]
+
+	search = (search or "").strip().lower()
+	if search:
+		records = [
+			r
+			for r in records
+			if search in (r["name"] or "").lower()
+			or search in (r["village"] or "").lower()
+			or search in str(r["mobile"] or "")
+		]
+
+	vo_values, shg_values = _as_filter_values(vo), _as_filter_values(shg)
+	vos = sorted({r["vo"] for r in records if r["vo"]})
+	shgs = sorted({r["shg"] for r in records if r["shg"]})
+	if vo_values:
+		records = [r for r in records if r["vo"] in vo_values]
+	if shg_values:
+		records = [r for r in records if r["shg"] in shg_values]
+
+	sort_field = "created" if sort_by == "created" else "last_updated"
+	records.sort(key=lambda r: r[sort_field] or "", reverse=True)
+
+	return {"status": 1, "msg": {"rows": records, "total": len(records), "vos": vos, "shgs": shgs}}

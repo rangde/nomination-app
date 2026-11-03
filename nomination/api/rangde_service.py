@@ -165,6 +165,53 @@ def get_metrics():
 		return {}
 
 
+NOMINEES_CACHE_KEY = "rangde_nominees"
+NOMINEES_CACHE_TTL = 60
+
+
+def _log_duplicate_mobiles(nominees):
+	seen = {}
+	for nominee in nominees:
+		key = re.sub(r"\D", "", str(nominee.get("mobileNumber") or ""))[-10:]
+		if not key:
+			continue
+		if key in seen:
+			frappe.logger("nomination").warning(
+				f"RangDe nominees share mobile {key}: {seen[key]}, {nominee.get('name')}"
+			)
+		seen[key] = nominee.get("name")
+
+
+def get_nominees(force=False):
+	"""Return the RangDe nominee list (cached briefly), or None when the request fails."""
+	if not force:
+		cached = frappe.cache().get_value(NOMINEES_CACHE_KEY)
+		if cached is not None:
+			return cached
+
+	headers = rangde_headers()
+	url = f"{get_base_url()}/borrower-nomination/list"
+	try:
+		response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
+	except requests.RequestException:
+		frappe.log_error(frappe.get_traceback(), "RangDe Nominee List Request Failed")
+		return None
+
+	if response.status_code != 200:
+		frappe.log_error(_response_summary(response), "RangDe Nominee List API Error")
+		return None
+
+	try:
+		nominees = (response.json() or {}).get("nominees") or []
+	except ValueError:
+		frappe.log_error(_response_summary(response), "RangDe Nominee List Invalid JSON Response")
+		return None
+
+	_log_duplicate_mobiles(nominees)
+	frappe.cache().set_value(NOMINEES_CACHE_KEY, nominees, expires_in_sec=NOMINEES_CACHE_TTL)
+	return nominees
+
+
 def get_user_name(fallback_identifier=None):
 	user = frappe.session.user
 	if user and user != "Guest":
