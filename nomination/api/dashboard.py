@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 import frappe
 from frappe.utils import get_fullname
@@ -182,9 +183,8 @@ def get_dashboard_metrics():
 		"training": {
 			"total_registered": metrics.get("totalTrainees"),
 			"under_training": metrics.get("completedTraining"),
-			"assessment_completed": metrics.get(
-				"completedAssessment", (metrics.get("passed") or 0) + (metrics.get("failed") or 0)
-			),
+			"assessment_completed": metrics.get("completedAssessment")
+			or (metrics.get("passed") or 0) + (metrics.get("failed") or 0),
 			"passed": metrics.get("passed"),
 			"failed": metrics.get("failed"),
 		},
@@ -323,14 +323,20 @@ def _mobile_key(value) -> str:
 
 
 def _naive_datetime(value):
+	"""Parse a timestamp into a naive datetime in the site timezone (RangDe sends offsets / Z)."""
 	if not value:
 		return None
-	if isinstance(value, datetime):
-		return value.replace(tzinfo=None)
-	try:
-		return datetime.fromisoformat(str(value)).replace(tzinfo=None)
-	except ValueError:
-		return None
+	if not isinstance(value, datetime):
+		text = str(value).strip()
+		if text.endswith(("Z", "z")):
+			text = f"{text[:-1]}+00:00"
+		try:
+			value = datetime.fromisoformat(text)
+		except ValueError:
+			return None
+	if value.tzinfo is not None:
+		value = value.astimezone(ZoneInfo(frappe.utils.get_system_timezone()))
+	return value.replace(tzinfo=None)
 
 
 def _iso(value) -> str | None:
@@ -347,18 +353,20 @@ def _training_status(nominee: dict) -> str:
 
 def _loan_status(nominee: dict) -> str | None:
 	status = (nominee.get("lpStatus") or "").strip().lower()
-	if status in LOAN_STATUSES:
-		return status
-	if nominee.get("repaidSoFar") or nominee.get("lastRepaymentDate"):
+	if status:
+		# unknown values (Rejected, Closed, ...) are not one of the dashboard's loan stages
+		return status if status in LOAN_STATUSES else None
+	# no lpStatus: infer from the loan dates
+	if nominee.get("lastRepaymentDate"):
 		return "repaying"
 	if nominee.get("disbursalDate"):
 		return "disbursed"
-	if nominee.get("loanId") or status:
+	if nominee.get("loanId"):
 		return "applied"
 	return None
 
 
-def _didi_record(form: dict | None, nominee: dict | None) -> dict:
+def _didi_record(form: dict | None, nominee: dict | None, index: int = 0) -> dict:
 	"""One didi, with her current stage/status (the furthest stage she has reached)."""
 	training_status = _training_status(nominee) if nominee else None
 	loan_status = _loan_status(nominee) if nominee else None
@@ -369,7 +377,7 @@ def _didi_record(form: dict | None, nominee: dict | None) -> dict:
 	elif training_status:
 		stage, status = "training", training_status
 	else:
-		stage, status = "nomination", nomination_status or "shg_approved"
+		stage, status = "nomination", nomination_status
 
 	form = form or {}
 	nominee = nominee or {}
@@ -381,7 +389,7 @@ def _didi_record(form: dict | None, nominee: dict | None) -> dict:
 	)
 
 	return {
-		"key": form.get("name") or nominee.get("mobileNumber"),
+		"key": form.get("name") or _mobile_key(nominee.get("mobileNumber")) or f"rangde-{index}",
 		"name": full_name or nominee.get("name") or form.get("name"),
 		"mobile": form.get("mobile_number") or nominee.get("mobileNumber"),
 		"village": form.get("townvillage"),
@@ -417,11 +425,29 @@ def get_dashboard_didi_rows(tab="all", statuses=None, vo=None, shg=None, search=
 	nominees = get_nominees()
 	if nominees is None:
 		frappe.throw(frappe._("Unable to load nominees from RangDe."))
-	nominee_by_mobile = {_mobile_key(n.get("mobileNumber")): n for n in nominees}
+	nominee_by_mobile, nominees_without_mobile = {}, []
+	for nominee in nominees:
+		key = _mobile_key(nominee.get("mobileNumber"))
+		if not key:
+			nominees_without_mobile.append(nominee)
+			continue
+		existing = nominee_by_mobile.get(key)
+		if existing:
+			frappe.log_error(
+				f"Mobile {key} is on multiple RangDe nominees: {existing.get('name')}, {nominee.get('name')}",
+				"RangDe Duplicate Nominee Mobile",
+			)
+			# keep the most recently updated record
+			if (nominee.get("lastUpdated") or "") <= (existing.get("lastUpdated") or ""):
+				continue
+		nominee_by_mobile[key] = nominee
 
-	form_filters = {}
+	# only the active nomination stages, like the existing list endpoints
+	form_filters = {"workflow_state": ["in", list(NOMINATION_STATUS_BY_WORKFLOW_STATE)]}
 	if owners is not None:
-		form_filters["owner"] = ["in", list(owners)] if owners else ["in", [""]]
+		if not owners:
+			return {"status": 1, "msg": {"rows": [], "total": 0, "vos": [], "shgs": []}}
+		form_filters["owner"] = ["in", list(owners)]
 	forms = frappe.get_all(
 		"Nomination Form",
 		fields=[
@@ -444,12 +470,18 @@ def get_dashboard_didi_rows(tab="all", statuses=None, vo=None, shg=None, search=
 	for form in forms:
 		key = _mobile_key(form.mobile_number)
 		nominee = nominee_by_mobile.get(key) if key else None
-		if nominee:
+		if nominee and key in matched:
+			# a second form with the same number must not attach to the same nominee
+			frappe.log_error(f"Mobile {key} is on multiple Nomination Forms", "Duplicate Nomination Mobile")
+			nominee = None
+		elif nominee:
 			matched.add(key)
 		records.append(_didi_record(form, nominee))
 	if owners is None:
 		# RangDe-only didis (no local Nomination Form) are visible to users who see everything
-		records += [_didi_record(None, n) for k, n in nominee_by_mobile.items() if k not in matched]
+		rangde_only = [n for k, n in nominee_by_mobile.items() if k not in matched]
+		rangde_only += nominees_without_mobile
+		records += [_didi_record(None, n, index) for index, n in enumerate(rangde_only)]
 
 	if tab == "training":
 		records = [r for r in records if r["training_status"]]

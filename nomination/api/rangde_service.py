@@ -165,8 +165,16 @@ def get_metrics():
 		return {}
 
 
+NOMINEES_CACHE_KEY = "rangde_nominees"
+NOMINEES_CACHE_TTL = 60
+
+
 def get_nominees():
-	"""Return the RangDe nominee list, or None when the request fails."""
+	"""Return the RangDe nominee list (cached briefly), or None when the request fails."""
+	cached = frappe.cache().get_value(NOMINEES_CACHE_KEY)
+	if cached is not None:
+		return cached
+
 	headers = rangde_headers()
 	url = f"{get_base_url()}/borrower-nomination/list"
 	try:
@@ -180,10 +188,13 @@ def get_nominees():
 		return None
 
 	try:
-		return (response.json() or {}).get("nominees") or []
+		nominees = (response.json() or {}).get("nominees") or []
 	except ValueError:
 		frappe.log_error(_response_summary(response), "RangDe Nominee List Invalid JSON Response")
 		return None
+
+	frappe.cache().set_value(NOMINEES_CACHE_KEY, nominees, expires_in_sec=NOMINEES_CACHE_TTL)
+	return nominees
 
 
 def get_user_name(fallback_identifier=None):
