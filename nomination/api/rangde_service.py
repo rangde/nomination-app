@@ -169,21 +169,8 @@ NOMINEES_CACHE_KEY = "rangde_nominees"
 NOMINEES_CACHE_TTL = 60
 
 
-def _log_duplicate_mobiles(nominees):
-	seen = {}
-	for nominee in nominees:
-		key = re.sub(r"\D", "", str(nominee.get("mobileNumber") or ""))[-10:]
-		if not key:
-			continue
-		if key in seen:
-			frappe.logger("nomination").warning(
-				f"RangDe nominees share mobile {key}: {seen[key]}, {nominee.get('name')}"
-			)
-		seen[key] = nominee.get("name")
-
-
 def get_nominees(force=False):
-	"""Return the RangDe nominee list (cached briefly), or None when the request fails."""
+	"""Return the RangDe nominee list (cached briefly); throws with the reason if RangDe fails."""
 	if not force:
 		cached = frappe.cache().get_value(NOMINEES_CACHE_KEY)
 		if cached is not None:
@@ -195,19 +182,20 @@ def get_nominees(force=False):
 		response = requests.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
 	except requests.RequestException:
 		frappe.log_error(frappe.get_traceback(), "RangDe Nominee List Request Failed")
-		return None
+		frappe.throw(frappe._("Unable to load nominees from RangDe (could not connect)."))
 
 	if response.status_code != 200:
 		frappe.log_error(_response_summary(response), "RangDe Nominee List API Error")
-		return None
+		frappe.throw(
+			frappe._("Unable to load nominees from RangDe (status {0}).").format(response.status_code)
+		)
 
 	try:
 		nominees = (response.json() or {}).get("nominees") or []
 	except ValueError:
 		frappe.log_error(_response_summary(response), "RangDe Nominee List Invalid JSON Response")
-		return None
+		frappe.throw(frappe._("Unable to load nominees from RangDe (invalid response)."))
 
-	_log_duplicate_mobiles(nominees)
 	frappe.cache().set_value(NOMINEES_CACHE_KEY, nominees, expires_in_sec=NOMINEES_CACHE_TTL)
 	return nominees
 
