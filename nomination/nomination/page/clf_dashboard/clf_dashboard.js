@@ -337,6 +337,13 @@ const clf_dashboard = {
 			this.open_list($(event.currentTarget).data("stage"));
 		});
 
+		$("#clf-dashboard-root").on("keydown", "[data-metric]", (event) => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				this.open_metric_list($(event.currentTarget).data("metric"));
+			}
+		});
+
 		$("#clf-dashboard-root").on("click", "[data-metric]", (event) => {
 			this.open_metric_list($(event.currentTarget).data("metric"));
 		});
@@ -358,14 +365,6 @@ const clf_dashboard = {
 			const tab = String($(event.currentTarget).data("tab"));
 			if (tab === "nomination") this.open_list("all");
 			else this.open_didi_list(tab, []);
-		});
-
-		$("#clf-dashboard-root").on("click", "[data-stage-tab]", (event) => {
-			this.stageKey = $(event.currentTarget).data("stage-tab");
-			this.selectedStages = this.stageKey === "all" ? [] : [this.stageKey];
-			this.page = 1;
-			this.showAllCards = false;
-			this.load_list();
 		});
 
 		$("#clf-dashboard-root").on("click", "[data-sheet-toggle]", (event) => {
@@ -746,7 +745,7 @@ const clf_dashboard = {
 		const dash = (v) => (v ? String(v) : "—");
 		const day = (v) => (v ? this.date_label(v) : "—");
 		const openedFrom = this.tab === "all" ? row.stage : this.tab;
-		const nominationKey = row.nomination_status || "shg_approved";
+		const nominationKey = row.nomination_status || "unavailable";
 
 		const training = row.training_status
 			? this.modal_section(
@@ -804,15 +803,15 @@ const clf_dashboard = {
 						"nomination_tab",
 						nominationKey,
 						[
-							[this.t("group"), row.shg || "-"],
-							[this.t("vo"), row.vo || "-"],
+							[this.t("group"), row.shg || "—"],
+							[this.t("vo"), row.vo || "—"],
 							[
 								this.t("nominated_on"),
-								row.nominated_on ? this.date_label(row.nominated_on) : "-",
+								row.nominated_on ? this.date_label(row.nominated_on) : "—",
 							],
 							[
 								this.t("days_ago"),
-								row.nominated_on ? `${this.days_ago(row.nominated_on)} days` : "-",
+								row.nominated_on ? `${this.days_ago(row.nominated_on)} days` : "—",
 							],
 						],
 						openedFrom === "nomination"
@@ -1621,9 +1620,9 @@ const clf_dashboard = {
 		const numeric = typeof value !== "string";
 		const display = numeric ? 0 : value;
 		const target = numeric ? this.num(value) : "";
-		const tag = clickable ? "button" : "div";
+		const tag = "div";
 		const attrs = clickable
-			? `type="button" data-metric="${label_key}" title="${frappe.utils.escape_html(
+			? `role="button" tabindex="0" data-metric="${label_key}" title="${frappe.utils.escape_html(
 					this.t("open_list")
 			  )}"`
 			: "";
