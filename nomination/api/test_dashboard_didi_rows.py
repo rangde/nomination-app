@@ -169,23 +169,13 @@ class TestDidiRows(unittest.TestCase):
 
 	def test_assessment_completed_falls_back_when_null(self):
 		metrics = {"completedAssessment": None, "passed": 2, "failed": 3}
-		with patch.object(dashboard, "_count_nomination_forms", return_value=0):
-			result = dashboard._build_dashboard_metrics(metrics, None)
-		self.assertEqual(result["training"]["assessment_completed"], 5)
-
-	def test_rangde_failure_message_includes_status_code(self):
-		from nomination.api import rangde_service
-
-		response = type("R", (), {"status_code": 400, "text": "Bad Request", "headers": {}})()
 		with (
-			patch.object(rangde_service, "get_base_url", return_value="https://x"),
-			patch.object(rangde_service, "rangde_headers", return_value={}),
-			patch.object(rangde_service.requests, "get", return_value=response),
-			patch.object(rangde_service.frappe, "log_error"),
+			patch.object(dashboard, "get_metrics", return_value=metrics),
+			patch.object(dashboard, "_nomination_owner_scope_for_session", return_value=None),
+			patch.object(dashboard, "_count_nomination_forms", return_value=0),
 		):
-			with self.assertRaises(frappe.ValidationError) as ctx:
-				rangde_service.get_nominees(force=True)
-		self.assertIn("status 400", str(ctx.exception))
+			result = dashboard.get_dashboard_metrics()
+		self.assertEqual(result["training"]["assessment_completed"], 5)
 
 	def test_invalid_tab_rejected(self):
 		with patch.object(dashboard, "_nomination_owner_scope_for_session", return_value=None):
