@@ -1743,3 +1743,25 @@ body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .main-sect
 		justify-content: space-between;
 	}
 }
+
+#clf-dashboard-root button.abh-metric-card.clickable {
+	font: inherit;
+	text-align: left;
+	width: 100%;
+	cursor: pointer;
+}
+
+#clf-dashboard-root .abh-metric-card.clickable:focus-visible {
+	outline: 2px solid var(--clf-blue-fg);
+	outline-offset: 2px;
+}
+
+#clf-dashboard-root #abh-training.abh-metric-grid {
+	grid-template-columns: repeat(5, minmax(150px, 1fr));
+}
+
+@media (max-width: 1100px) {
+	#clf-dashboard-root #abh-training.abh-metric-grid {
+		grid-template-columns: repeat(2, minmax(150px, 1fr));
+	}
+}

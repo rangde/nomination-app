@@ -120,6 +120,23 @@ const clf_dashboard = {
 		{ workflowState: "VO Approved", approved: "vo_approved", pending: "clf_pending" },
 	],
 	selectedStages: [],
+	listKind: "nomination",
+	tab: "nomination",
+	statuses: [],
+	trainingStatuses: ["registered", "training_completed", "passed", "failed"],
+	loanStatuses: ["applied", "disbursed", "repaying"],
+	// dashboard tile -> list tab + status filter (a didi has a single current status)
+	metricTargets: {
+		total_registered: { tab: "training", statuses: [] },
+		under_training: { tab: "training", statuses: ["training_completed", "passed", "failed"] },
+		assessment_completed: { tab: "training", statuses: ["passed", "failed"] },
+		passed: { tab: "training", statuses: ["passed"] },
+		failed: { tab: "training", statuses: ["failed"] },
+		loan_applicants: { tab: "loan", statuses: [] },
+		loan_disbursed: { tab: "loan", statuses: ["disbursed", "repaying"] },
+		amount_disbursed: { tab: "loan", statuses: ["disbursed", "repaying"] },
+	},
+	didiData: { rows: [], total: 0, vos: [], shgs: [] },
 	counterFrame: null,
 	search: "",
 	vo: [],
@@ -146,8 +163,8 @@ const clf_dashboard = {
 			vo_approved: "VO Approved",
 			clf_pending: "CLF Pending",
 			clf_approved: "CLF Approved",
-			total_registered: "Total Registered",
-			under_training: "Under Training",
+			total_registered: "Registered for Training",
+			under_training: "Completed Training",
 			passed: "Passed",
 			failed: "Failed",
 			loan_applicants: "Loan Applicants",
@@ -191,6 +208,26 @@ const clf_dashboard = {
 			no_records: "No records found.",
 			synonymous_disclaimer:
 				"{0} and {1} show the same nominations, cards are currently labeled {0}.",
+			assessment_completed: "Completed Assessment",
+			registered: "Registered",
+			training_completed: "Training Completed",
+			applied: "Applied",
+			disbursed: "Disbursed",
+			repaying: "Repaying",
+			all_training: "All Training",
+			all_loan: "All Loan",
+			all_status: "All Status",
+			amount_requested: "Amount Requested",
+			amount_disbursed_card: "Amount Disbursed",
+			amount_repaid: "Amount Repaid So Far",
+			reg_date: "Date of Registration",
+			completion_date: "Date of Training Completion",
+			assessment_date: "Date of Assessment",
+			result: "Result",
+			disbursed_on: "Disbursed On",
+			last_repayment: "Last Repayment Date",
+			loan_not_yet: "She can apply for a loan after passing the assessment.",
+			training_not_yet: "She will enter training after CLF approval.",
 		},
 		hi: {
 			kicker: "CLF अवलोकन",
@@ -210,7 +247,7 @@ const clf_dashboard = {
 			clf_pending: "CLF लंबित",
 			clf_approved: "CLF से मंजूर",
 			total_registered: "कुल नाम दर्ज",
-			under_training: "प्रशिक्षण चल रहा",
+			under_training: "प्रशिक्षण पूरा",
 			passed: "पास",
 			failed: "फेल",
 			loan_applicants: "लोन आवेदन",
@@ -254,6 +291,26 @@ const clf_dashboard = {
 			no_records: "कोई रिकॉर्ड नहीं मिला।",
 			synonymous_disclaimer:
 				"{0} और {1} में एक जैसे नामांकन हैं, कार्ड पर अभी {0} दिखाया गया है।",
+			assessment_completed: "मूल्यांकन पूरा",
+			registered: "नाम दर्ज",
+			training_completed: "प्रशिक्षण पूरा",
+			applied: "आवेदन किया",
+			disbursed: "लोन मिला",
+			repaying: "वापसी जारी",
+			all_training: "सभी प्रशिक्षण",
+			all_loan: "सभी लोन",
+			all_status: "सभी स्थिति",
+			amount_requested: "माँगी गई राशि",
+			amount_disbursed_card: "वितरित राशि",
+			amount_repaid: "अब तक चुकाई राशि",
+			reg_date: "पंजीकरण की तारीख",
+			completion_date: "प्रशिक्षण पूरा होने की तारीख",
+			assessment_date: "परीक्षा की तारीख",
+			result: "परिणाम",
+			disbursed_on: "वितरण की तारीख",
+			last_repayment: "अंतिम भुगतान की तारीख",
+			loan_not_yet: "परीक्षा पास होने के बाद लोन के लिए आवेदन हो सकता है।",
+			training_not_yet: "CLF मंजूरी के बाद प्रशिक्षण शुरू होगा।",
 		},
 	},
 
@@ -272,12 +329,16 @@ const clf_dashboard = {
 		$("#clf-dashboard-root").on("click", "[data-action='refresh']", () => this.load(true));
 
 		$("#clf-dashboard-root").on("click", "[data-action='browse-village']", () =>
-			this.open_list("all")
+			this.open_didi_list("all", [])
 		);
 
 		$("#clf-dashboard-root").on("click", ".abh-flow-step", (event) => {
 			event.preventDefault();
 			this.open_list($(event.currentTarget).data("stage"));
+		});
+
+		$("#clf-dashboard-root").on("click", "[data-metric]", (event) => {
+			this.open_metric_list($(event.currentTarget).data("metric"));
 		});
 
 		$("#clf-dashboard-root").on("click", "[data-action='navigate-back']", () => {
@@ -291,6 +352,12 @@ const clf_dashboard = {
 				return;
 			}
 			frappe.set_route("List", "Nomination Form", "List");
+		});
+
+		$("#clf-dashboard-root").on("click", "[data-tab]", (event) => {
+			const tab = String($(event.currentTarget).data("tab"));
+			if (tab === "nomination") this.open_list("all");
+			else this.open_didi_list(tab, []);
 		});
 
 		$("#clf-dashboard-root").on("click", "[data-stage-tab]", (event) => {
@@ -346,14 +413,14 @@ const clf_dashboard = {
 			this.page = 1;
 			this.showAllCards = false;
 			clearTimeout(this.searchTimer);
-			this.searchTimer = setTimeout(() => this.load_list(), 250);
+			this.searchTimer = setTimeout(() => this.reload_list(), 250);
 		});
 
 		$("#clf-dashboard-root").on("click", "[data-sort]", (event) => {
 			this.sortBy = $(event.currentTarget).data("sort");
 			this.page = 1;
 			this.showAllCards = false;
-			this.load_list();
+			this.reload_list();
 		});
 
 		$("#clf-dashboard-root").on("click", "[data-card-page]", (event) => {
@@ -375,7 +442,12 @@ const clf_dashboard = {
 		});
 
 		$("#clf-dashboard-root").on("click", ".abh-list-card", (event) => {
-			const name = $(event.currentTarget).data("name");
+			const name = String($(event.currentTarget).data("name"));
+			if (this.listKind === "didi") {
+				const didi = this.didiData.rows.find((item) => String(item.key) === name);
+				if (didi) this.open_didi_modal(didi);
+				return;
+			}
 			const row = this.listData.rows.find((item) => item.name === name);
 			if (row) this.open_modal(row);
 		});
@@ -395,6 +467,7 @@ const clf_dashboard = {
 
 	open_list(stageKey) {
 		this.view = "list";
+		this.listKind = "nomination";
 		$("#clf-dashboard-root").addClass("abh-list-mode");
 		this.stageKey = this.normalize_stage(stageKey) || "shg_approved";
 		this.page = 1;
@@ -407,6 +480,350 @@ const clf_dashboard = {
 		$("#abh-dashboard-view").hide();
 		$("#abh-list-view").show();
 		this.load_list();
+	},
+
+	open_metric_list(metricKey) {
+		const target = this.metricTargets[metricKey];
+		if (target) this.open_didi_list(target.tab, target.statuses);
+	},
+
+	reload_list() {
+		if (this.listKind === "didi") this.load_didi_list();
+		else this.load_list();
+	},
+
+	open_didi_list(tab, statuses) {
+		this.view = "list";
+		this.listKind = "didi";
+		this.tab = tab;
+		this.statuses = statuses || [];
+		this.page = 1;
+		this.search = "";
+		this.showAllCards = false;
+		this.vo = [];
+		this.shg = [];
+		this.sortBy = "modified";
+		$("#clf-dashboard-root").addClass("abh-list-mode");
+		$("#abh-dashboard-view").hide();
+		$("#abh-list-view").show();
+		this.load_didi_list();
+	},
+
+	load_didi_list() {
+		this.update_list_route();
+		// keep the search box mounted while typing; only show the loader on first paint
+		if (!$("#abh-list-view .abh-search").length) {
+			$("#abh-list-view").html(
+				`<div class="abh-list-loading-wrap"><div class="abh-list-loading">Loading...</div></div>`
+			);
+		}
+
+		frappe.call({
+			method: "nomination.api.dashboard.get_dashboard_didi_rows",
+			args: {
+				tab: this.tab,
+				statuses: this.statuses.join(","),
+				vo: this.vo.join(","),
+				shg: this.shg.join(","),
+				search: this.search,
+				sort_by: this.sortBy,
+			},
+			callback: (r) => {
+				const payload = r.message && r.message.status ? r.message.msg : null;
+				this.didiData = payload || { rows: [], total: 0, vos: [], shgs: [] };
+				this.page = 1;
+				this.render_list();
+				const input = $("#abh-list-view [data-filter='search']");
+				if (this.search && input.length) {
+					input.trigger("focus");
+					input[0].setSelectionRange(this.search.length, this.search.length);
+				}
+			},
+			error: () => {
+				frappe.msgprint(__("Unable to load didis."));
+			},
+		});
+	},
+
+	tab_status_keys() {
+		if (this.tab === "training") return this.trainingStatuses;
+		if (this.tab === "loan") return this.loanStatuses;
+		return [
+			"shg_approved",
+			"vo_approved",
+			"clf_approved",
+			...this.trainingStatuses,
+			...this.loanStatuses,
+		];
+	},
+
+	status_all_label() {
+		return this.t(
+			this.tab === "training"
+				? "all_training"
+				: this.tab === "loan"
+				? "all_loan"
+				: "all_status"
+		);
+	},
+
+	tabs_html() {
+		const tabs = [
+			["all", "all"],
+			["nomination", "nomination_tab"],
+			["training", "training_tab"],
+			["loan", "loan_tab"],
+		];
+		const active = this.listKind === "didi" ? this.tab : "nomination";
+		return `<div class="abh-tabs-row"><div class="abh-tabs">${tabs
+			.map(
+				([tab, label]) =>
+					`<button class="abh-tab ${
+						tab === active ? "active" : ""
+					}" type="button" data-tab="${tab}">${frappe.utils.escape_html(
+						this.t(label)
+					)}</button>`
+			)
+			.join("")}</div></div>`;
+	},
+
+	render_didi_list() {
+		const rows = this.didiData.rows || [];
+		const esc = frappe.utils.escape_html;
+		const totalPages = Math.max(1, Math.ceil(rows.length / this.collapsedCardLimit));
+		this.page = Math.min(Math.max(this.page, 1), totalPages);
+		const startIndex = (this.page - 1) * this.collapsedCardLimit;
+		const visibleRows = this.showAllCards
+			? rows
+			: rows.slice(startIndex, startIndex + this.collapsedCardLimit);
+		const hasMoreRows = rows.length > this.collapsedCardLimit;
+		const title = this.t(
+			{ all: "all", training: "training_tab", loan: "loan_tab" }[this.tab] || "all"
+		);
+
+		$("#abh-list-view").html(`
+			<div class="abh-list-page">
+				<div class="abh-list-top">
+					<div class="abh-list-summary">
+						<div class="abh-list-total"><strong>${this.format_number(
+							this.num(this.didiData.total)
+						)}</strong><span>${esc(this.t("didis"))}</span></div>
+					</div>
+				</div>
+				<h1 class="abh-list-title">${esc(title)}</h1>
+				${this.tabs_html()}
+				<div class="abh-list-rule"></div>
+				<div class="abh-filter-row">
+					<div class="abh-filter-selects">
+						${this.custom_select(
+							"status",
+							this.filter_label(
+								this.status_all_label(),
+								this.statuses.map((key) => this.t(key))
+							),
+							[],
+							this.statuses
+						)}
+						${this.option_select("vo", this.t("all_vos"), this.didiData.vos || [], this.vo)}
+						${this.option_select("shg", this.t("all_shgs"), this.didiData.shgs || [], this.shg)}
+					</div>
+					<div class="abh-filter-tools">
+						<label class="abh-search">
+							<span>⌕</span>
+							<input data-filter="search" value="${esc(this.search)}" placeholder="${esc(
+			this.t("search_placeholder")
+		)}">
+						</label>
+						<div class="abh-sort">
+							<button class="${
+								this.sortBy === "modified" ? "active" : ""
+							}" type="button" data-sort="modified">${esc(
+			this.t("last_updated_sort")
+		)}</button>
+							<button class="${
+								this.sortBy === "created" ? "active" : ""
+							}" type="button" data-sort="created">${esc(
+			this.t("date_created_sort")
+		)}</button>
+						</div>
+					</div>
+				</div>
+				<div class="abh-card-grid">
+					${
+						rows.length
+							? visibleRows.map((row, index) => this.didi_card(row, index)).join("")
+							: `<div class="abh-empty">${esc(this.t("no_records"))}</div>`
+					}
+				</div>
+				${
+					hasMoreRows
+						? `<div class="abh-pager">
+							${
+								this.showAllCards
+									? ""
+									: `<button type="button" ${
+											this.page <= 1 ? "disabled" : ""
+									  } data-card-page="${
+											this.page - 1
+									  }"><span aria-hidden="true">←</span>${esc(
+											this.t("prev")
+									  )}</button>
+										<span>${esc(
+											this.t("page_of")
+												.replace("{0}", this.format_number(this.page))
+												.replace("{1}", this.format_number(totalPages))
+										)}</span>
+										<button type="button" ${this.page >= totalPages ? "disabled" : ""} data-card-page="${
+											this.page + 1
+									  }">${esc(
+											this.t("next")
+									  )}<span aria-hidden="true">→</span></button>`
+							}
+							<button class="abh-show-all" type="button" data-action="${
+								this.showAllCards ? "show-less-cards" : "show-all-cards"
+							}">${esc(
+								this.t(this.showAllCards ? "show_less" : "show_all")
+						  )}</button>
+						</div>`
+						: ""
+				}
+			</div>
+		`);
+	},
+
+	stage_tab_key(stage) {
+		return { nomination: "nomination_tab", training: "training_tab", loan: "loan_tab" }[stage];
+	},
+
+	didi_amount_line(row) {
+		const pick = {
+			applied: ["amount_requested", row.requested_amount],
+			disbursed: ["amount_disbursed_card", row.disbursed_amount],
+			repaying: ["amount_repaid", row.repaid_so_far],
+		}[row.status];
+		if (!pick) return "";
+		return `<div class="abh-card-kicker">${frappe.utils.escape_html(this.t(pick[0]))}</div>
+			<div class="abh-card-stage">${frappe.utils.escape_html(pick[1] || "—")}</div>`;
+	},
+
+	didi_card(row, index = 0) {
+		const esc = frappe.utils.escape_html;
+		const delayMs = Math.min(index, 11) * 35;
+		const stageIcon = this.icon(
+			{ nomination: "nomination_stage", training: "training_stage", loan: "loan_stage" }[
+				row.stage
+			]
+		);
+		return `
+			<button class="abh-list-card" type="button" style="--abh-card-delay:${delayMs}ms" data-name="${esc(
+			row.key
+		)}">
+				<div class="abh-card-main">
+					<div>
+						<h3>${esc(row.name || "-")}</h3>
+						<div class="abh-village">${this.icon("home")} ${esc(row.village || "-")}</div>
+					</div>
+					${this.avatar({ photo_of_didi: row.photo, first_name: row.name })}
+				</div>
+				<div class="abh-card-kicker">${esc(this.t("stage"))}</div>
+				<div class="abh-card-stage"><span class="abh-mini-chart">${stageIcon}</span>${esc(
+			this.t(this.stage_tab_key(row.stage))
+		)}</div>
+				<div class="abh-card-kicker">${esc(this.t("status"))}</div>
+				<div class="abh-status-pill"><span></span>${esc(this.t(row.status))}</div>
+				${row.stage === "loan" ? this.didi_amount_line(row) : ""}
+				<div class="abh-card-footer">
+					<div>
+						<strong>${this.icon("median_days")} ${esc(this.date_label(row.last_updated))}</strong>
+						<span>${esc(this.t("last_updated_card"))}</span>
+					</div>
+				</div>
+			</button>`;
+	},
+
+	open_didi_modal(row) {
+		const esc = frappe.utils.escape_html;
+		const dash = (v) => (v ? String(v) : "—");
+		const day = (v) => (v ? this.date_label(v) : "—");
+		const openedFrom = this.tab === "all" ? row.stage : this.tab;
+		const nominationKey = row.nomination_status || "shg_approved";
+
+		const training = row.training_status
+			? this.modal_section(
+					"training_tab",
+					row.training_status,
+					[
+						[this.t("reg_date"), day(row.registered_on)],
+						[this.t("completion_date"), day(row.training_completed_on)],
+						[this.t("assessment_date"), day(row.assessed_on)],
+						[
+							this.t("result"),
+							["passed", "failed"].includes(row.training_status)
+								? this.t(row.training_status)
+								: "—",
+						],
+					],
+					openedFrom === "training"
+			  )
+			: this.modal_section(
+					"training_tab",
+					"not_yet",
+					[[this.t("training_not_yet"), ""]],
+					false
+			  );
+
+		const loan = row.loan_status
+			? this.modal_section(
+					"loan_tab",
+					row.loan_status,
+					[
+						[this.t("amount_requested"), dash(row.requested_amount)],
+						[this.t("amount_disbursed_card"), dash(row.disbursed_amount)],
+						[this.t("disbursed_on"), day(row.disbursed_on)],
+						[this.t("amount_repaid"), dash(row.repaid_so_far)],
+						[this.t("last_repayment"), day(row.last_repayment_on)],
+					],
+					openedFrom === "loan"
+			  )
+			: this.modal_section("loan_tab", "not_yet", [[this.t("loan_not_yet"), ""]], false);
+
+		$("#abh-detail-modal")
+			.html(
+				`
+			<div class="abh-modal-backdrop">
+				<div class="abh-modal-card">
+					<button class="abh-modal-close" type="button" data-action="close-modal">×</button>
+					<div class="abh-modal-person">
+						${this.avatar({ photo_of_didi: row.photo, first_name: row.name })}
+						<div>
+							<h2>${esc(row.name || "-")}</h2>
+							<p>${esc(row.village || "-")} · ${esc(row.shg || "-")}</p>
+						</div>
+					</div>
+					${this.modal_section(
+						"nomination_tab",
+						nominationKey,
+						[
+							[this.t("group"), row.shg || "-"],
+							[this.t("vo"), row.vo || "-"],
+							[
+								this.t("nominated_on"),
+								row.nominated_on ? this.date_label(row.nominated_on) : "-",
+							],
+							[
+								this.t("days_ago"),
+								row.nominated_on ? `${this.days_ago(row.nominated_on)} days` : "-",
+							],
+						],
+						openedFrom === "nomination"
+					)}
+					${training}
+					${loan}
+				</div>
+			</div>
+		`
+			)
+			.show();
 	},
 
 	open_filter_sheet(type) {
@@ -535,7 +952,26 @@ const clf_dashboard = {
 		const state = this.get_route_state();
 		if (state.view !== "list") return;
 
+		if (state.kind === "didi") {
+			this.view = "list";
+			this.listKind = "didi";
+			this.tab = state.tab;
+			this.statuses = state.statuses;
+			this.page = 1;
+			this.showAllCards = false;
+			this.search = state.search;
+			this.vo = state.vo;
+			this.shg = state.shg;
+			this.sortBy = state.sortBy;
+			$("#clf-dashboard-root").addClass("abh-list-mode");
+			$("#abh-dashboard-view").hide();
+			$("#abh-list-view").show();
+			this.load_didi_list();
+			return;
+		}
+
 		this.view = "list";
+		this.listKind = "nomination";
 		this.stageKey = state.stageKey;
 		this.page = 1;
 		this.pageSize = state.pageSize;
@@ -564,6 +1000,21 @@ const clf_dashboard = {
 		const routeStage = [...routeParts, ...pagePathParts].find((part) =>
 			this.normalize_stage(part)
 		);
+		const tab = params.get("tab");
+		if (params.get("view") === "list" && ["all", "training", "loan"].includes(tab)) {
+			return {
+				view: "list",
+				kind: "didi",
+				tab,
+				statuses: this.parse_multi_param(params.get("status")),
+				search: params.get("search") || "",
+				vo: this.parse_multi_param(params.get("vo")),
+				shg: this.parse_multi_param(params.get("shg")),
+				sortBy: ["modified", "created"].includes(params.get("sort_by"))
+					? params.get("sort_by")
+					: "modified",
+			};
+		}
 		const stageKey =
 			this.normalize_stage(params.get("stage")) || this.normalize_stage(routeStage);
 		const hasListRoute =
@@ -609,6 +1060,16 @@ const clf_dashboard = {
 		if (this.view !== "list") return;
 		const params = new URLSearchParams();
 		params.set("view", "list");
+		if (this.listKind === "didi") {
+			params.set("tab", this.tab);
+			if (this.statuses.length) params.set("status", this.statuses.join(","));
+			if (this.search) params.set("search", this.search);
+			if (this.vo.length) params.set("vo", this.vo.join(","));
+			if (this.shg.length) params.set("shg", this.shg.join(","));
+			if (this.sortBy !== "modified") params.set("sort_by", this.sortBy);
+			this.replace_route(`/app/clf-dashboard?${params.toString()}`);
+			return;
+		}
 		params.set("stage", this.stageKey);
 		if (this.search) params.set("search", this.search);
 		if (this.selectedStages.length) params.set("stage_filter", this.selectedStages.join(","));
@@ -667,10 +1128,17 @@ const clf_dashboard = {
 
 		$("#abh-training").html(
 			[
-				this.metric_card("total_registered", total, "gray", "ID"),
-				this.metric_card("under_training", entered, "amber", "TR"),
-				this.metric_card("passed", passed, "green", "OK"),
-				this.metric_card("failed", data.failed, "red", "NO"),
+				this.metric_card("total_registered", total, "gray", "ID", true),
+				this.metric_card("under_training", entered, "amber", "TR", true),
+				this.metric_card(
+					"assessment_completed",
+					this.num(data.assessment_completed),
+					"blue",
+					"AS",
+					true
+				),
+				this.metric_card("passed", passed, "green", "OK", true),
+				this.metric_card("failed", data.failed, "red", "NO", true),
 			].join("")
 		);
 	},
@@ -688,15 +1156,16 @@ const clf_dashboard = {
 
 		$("#abh-loan").html(
 			[
-				this.metric_card("loan_applicants", data.loan_applicants, "amber", "AP"),
-				this.metric_card("loan_disbursed", data.loan_disbursed, "blue", "LD"),
-				this.metric_card("amount_disbursed", amount, "green", "₹"),
+				this.metric_card("loan_applicants", data.loan_applicants, "amber", "AP", true),
+				this.metric_card("loan_disbursed", data.loan_disbursed, "blue", "LD", true),
+				this.metric_card("amount_disbursed", amount, "green", "₹", true),
 				this.metric_card("median_days", data.median_days, "gray", "DY"),
 			].join("")
 		);
 	},
 
 	render_list() {
+		if (this.listKind === "didi") return this.render_didi_list();
 		const total = this.num(this.listData.total);
 		const isAllStageView = !this.selectedStages.length;
 		const title =
@@ -727,26 +1196,7 @@ const clf_dashboard = {
 
 				<h1 class="abh-list-title">${frappe.utils.escape_html(title)}</h1>
 
-				<div class="abh-tabs-row">
-					<div class="abh-tabs">
-						<button class="abh-tab ${
-							isAllStageView ? "active" : ""
-						}" type="button" data-stage-tab="all">${frappe.utils.escape_html(
-			this.t("all")
-		)}</button>
-						<button class="abh-tab ${
-							!isAllStageView ? "active" : ""
-						}" type="button" data-stage-tab="shg_approved">${frappe.utils.escape_html(
-			this.t("nomination_tab")
-		)}</button>
-						<button class="abh-tab" type="button" disabled>${frappe.utils.escape_html(
-							this.t("training_tab")
-						)}</button>
-						<button class="abh-tab" type="button" disabled>${frappe.utils.escape_html(
-							this.t("loan_tab")
-						)}</button>
-					</div>
-				</div>
+				${this.tabs_html()}
 
 				<div class="abh-list-rule"></div>
 
@@ -898,6 +1348,8 @@ const clf_dashboard = {
 				.map((value) => this.normalize_stage(value))
 				.filter(Boolean);
 			this.stageKey = this.selectedStages.length === 1 ? this.selectedStages[0] : "all";
+		} else if (type === "status") {
+			this.statuses = selected;
 		} else if (type === "vo" || type === "shg") {
 			this[type] = selected;
 		}
@@ -905,7 +1357,7 @@ const clf_dashboard = {
 		this.close_filter_sheet();
 		this.page = 1;
 		this.showAllCards = false;
-		this.load_list();
+		this.reload_list();
 	},
 
 	filter_sheet_config(type) {
@@ -920,13 +1372,26 @@ const clf_dashboard = {
 			};
 		}
 
+		if (type === "status") {
+			return {
+				title: this.lang === "hi" ? "स्थिति चुनें" : "Choose Status",
+				selected: this.statuses,
+				options: [
+					{ value: "", label: this.status_all_label() },
+					...this.tab_status_keys().map((key) => ({ value: key, label: this.t(key) })),
+				],
+			};
+		}
+
+		const listSource = this.listKind === "didi" ? this.didiData : this.listData;
+
 		if (type === "vo") {
 			return {
 				title: this.t("all_vos"),
 				selected: this.vo,
 				options: [
 					{ value: "", label: this.t("all_vos") },
-					...(this.listData.vos || []).map((option) => ({
+					...(listSource.vos || []).map((option) => ({
 						value: option,
 						label: option,
 					})),
@@ -940,7 +1405,7 @@ const clf_dashboard = {
 				selected: this.shg,
 				options: [
 					{ value: "", label: this.t("all_shgs") },
-					...(this.listData.shgs || []).map((option) => ({
+					...(listSource.shgs || []).map((option) => ({
 						value: option,
 						label: option,
 					})),
@@ -953,7 +1418,10 @@ const clf_dashboard = {
 
 	option_tone(value) {
 		if (value === "shg_approved" || value === "vo_approved") return "blue";
-		if (value === "clf_approved") return "green";
+		if (value === "clf_approved" || value === "passed" || value === "repaying") return "green";
+		if (value === "failed") return "red";
+		if (value === "training_completed" || value === "applied") return "amber";
+		if (value === "disbursed") return "blue";
 		return "";
 	},
 
@@ -1149,12 +1617,18 @@ const clf_dashboard = {
 			</a>`;
 	},
 
-	metric_card(label_key, value, tone, icon) {
+	metric_card(label_key, value, tone, icon, clickable = false) {
 		const numeric = typeof value !== "string";
 		const display = numeric ? 0 : value;
 		const target = numeric ? this.num(value) : "";
+		const tag = clickable ? "button" : "div";
+		const attrs = clickable
+			? `type="button" data-metric="${label_key}" title="${frappe.utils.escape_html(
+					this.t("open_list")
+			  )}"`
+			: "";
 		return `
-			<div class="abh-metric-card ${tone}">
+			<${tag} class="abh-metric-card ${tone} ${clickable ? "clickable" : ""}" ${attrs}>
 				<div class="abh-metric-head">
 					<div class="abh-icon">${this.icon(label_key, icon)}</div>
 					<div class="abh-metric-label">${frappe.utils.escape_html(this.t(label_key))}</div>
@@ -1162,7 +1636,7 @@ const clf_dashboard = {
 				<div class="abh-metric-value" ${numeric ? `data-count-target="${target}"` : ""}>${
 			numeric ? this.format_number(display) : frappe.utils.escape_html(display)
 		}</div>
-			</div>`;
+			</${tag}>`;
 	},
 
 	animate_counters() {
