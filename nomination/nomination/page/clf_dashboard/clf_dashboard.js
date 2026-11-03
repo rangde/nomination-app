@@ -326,7 +326,10 @@ const clf_dashboard = {
 			this.render_current_view();
 		});
 
-		$("#clf-dashboard-root").on("click", "[data-action='refresh']", () => this.load(true));
+		$("#clf-dashboard-root").on("click", "[data-action='refresh']", () => {
+			if (this.view === "list" && this.listKind === "didi") this.load_didi_list(true);
+			else this.load(true);
+		});
 
 		$("#clf-dashboard-root").on("click", "[data-action='browse-village']", () =>
 			this.open_didi_list("all", [])
@@ -508,7 +511,7 @@ const clf_dashboard = {
 		this.load_didi_list();
 	},
 
-	load_didi_list() {
+	load_didi_list(refresh = false) {
 		this.update_list_route();
 		// keep the search box mounted while typing; only show the loader on first paint
 		if (!$("#abh-list-view .abh-search").length) {
@@ -526,6 +529,7 @@ const clf_dashboard = {
 				shg: this.shg.join(","),
 				search: this.search,
 				sort_by: this.sortBy,
+				refresh: refresh ? 1 : 0,
 			},
 			callback: (r) => {
 				const payload = r.message && r.message.status ? r.message.msg : null;

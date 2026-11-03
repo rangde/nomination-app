@@ -309,6 +309,8 @@ def get_dashboard_nomination_rows(
 
 TRAINING_STATUSES = ("registered", "training_completed", "passed", "failed")
 LOAN_STATUSES = ("applied", "disbursed", "repaying")
+# fully repaid loans stay in the Loan tab as Repaying (RangDe's exact lpStatus values to be confirmed)
+COMPLETED_LOAN_STATUSES = ("closed", "repaid", "completed", "settled")
 NOMINATION_STATUS_BY_WORKFLOW_STATE = {
 	"SHG Proposed": "shg_approved",
 	"VO Approved": "vo_approved",
@@ -355,6 +357,8 @@ def _loan_status(nominee: dict) -> str | None:
 	status = (nominee.get("lpStatus") or "").strip().lower()
 	if status:
 		# unknown values (Rejected, Closed, ...) are not one of the dashboard's loan stages
+		if status in COMPLETED_LOAN_STATUSES:
+			return "repaying"
 		return status if status in LOAN_STATUSES else None
 	# no lpStatus: infer from the loan dates
 	if nominee.get("lastRepaymentDate"):
@@ -416,13 +420,15 @@ def _didi_record(form: dict | None, nominee: dict | None, index: int = 0) -> dic
 
 
 @frappe.whitelist()
-def get_dashboard_didi_rows(tab="all", statuses=None, vo=None, shg=None, search=None, sort_by="modified"):
+def get_dashboard_didi_rows(
+	tab="all", statuses=None, vo=None, shg=None, search=None, sort_by="modified", refresh=0
+):
 	"""Unified didi list across Nomination Form (local) and the RangDe nominee list (training/loan)."""
 	owners = _nomination_owner_scope_for_session()
 	if tab not in DIDI_TABS:
 		frappe.throw(frappe._("Invalid dashboard tab selected."))
 
-	nominees = get_nominees()
+	nominees = get_nominees(force=bool(int(refresh or 0)))
 	if nominees is None:
 		frappe.throw(frappe._("Unable to load nominees from RangDe."))
 	nominee_by_mobile, nominees_without_mobile = {}, []
@@ -432,14 +438,9 @@ def get_dashboard_didi_rows(tab="all", statuses=None, vo=None, shg=None, search=
 			nominees_without_mobile.append(nominee)
 			continue
 		existing = nominee_by_mobile.get(key)
-		if existing:
-			frappe.log_error(
-				f"Mobile {key} is on multiple RangDe nominees: {existing.get('name')}, {nominee.get('name')}",
-				"RangDe Duplicate Nominee Mobile",
-			)
-			# keep the most recently updated record
-			if (nominee.get("lastUpdated") or "") <= (existing.get("lastUpdated") or ""):
-				continue
+		# duplicate numbers are logged once per cache refresh in get_nominees(); keep the latest
+		if existing and (nominee.get("lastUpdated") or "") <= (existing.get("lastUpdated") or ""):
+			continue
 		nominee_by_mobile[key] = nominee
 
 	# only the active nomination stages, like the existing list endpoints
@@ -464,6 +465,8 @@ def get_dashboard_didi_rows(tab="all", statuses=None, vo=None, shg=None, search=
 			"modified",
 		],
 		filters=form_filters,
+		# oldest form wins when several share a mobile number
+		order_by="creation asc",
 	)
 
 	records, matched = [], set()
@@ -472,7 +475,7 @@ def get_dashboard_didi_rows(tab="all", statuses=None, vo=None, shg=None, search=
 		nominee = nominee_by_mobile.get(key) if key else None
 		if nominee and key in matched:
 			# a second form with the same number must not attach to the same nominee
-			frappe.log_error(f"Mobile {key} is on multiple Nomination Forms", "Duplicate Nomination Mobile")
+			frappe.logger("nomination").warning(f"Mobile {key} is on multiple Nomination Forms")
 			nominee = None
 		elif nominee:
 			matched.add(key)

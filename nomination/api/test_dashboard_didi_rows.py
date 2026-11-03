@@ -156,6 +156,9 @@ class TestDidiRows(unittest.TestCase):
 		self.assertEqual(rows["NF-1"]["status"], "failed")
 		self.assertEqual(rows["NF-9"]["status"], "clf_approved")
 
+	def test_completed_loans_stay_in_loan_tab(self):
+		self.assertEqual(dashboard._loan_status({"lpStatus": "Closed"}), "repaying")
+
 	def test_unknown_loan_status_is_not_applied(self):
 		self.assertIsNone(dashboard._loan_status({"lpStatus": "Rejected", "loanId": "1"}))
 		self.assertEqual(dashboard._loan_status({"lpStatus": "", "loanId": "1"}), "applied")
