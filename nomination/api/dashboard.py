@@ -309,7 +309,7 @@ def get_dashboard_nomination_rows(
 
 TRAINING_STATUSES = ("registered", "training_completed", "passed", "failed")
 LOAN_STATUSES = ("applied", "disbursed", "repaying")
-# fully repaid loans stay in the Loan tab as Repaying (RangDe's exact lpStatus values to be confirmed)
+# fully repaid loans stay in the Loan tab as Repaying (RangDe's data so far only has Applied/Disbursed)
 COMPLETED_LOAN_STATUSES = ("closed", "repaid", "completed", "settled")
 NOMINATION_STATUS_BY_WORKFLOW_STATE = {
 	"SHG Proposed": "shg_approved",
@@ -438,7 +438,7 @@ def get_dashboard_didi_rows(
 			nominees_without_mobile.append(nominee)
 			continue
 		existing = nominee_by_mobile.get(key)
-		# duplicate numbers are logged once per cache refresh in get_nominees(); keep the latest
+		# RangDe returns one row per loan, so a person can repeat; keep her latest row
 		if existing and (nominee.get("lastUpdated") or "") <= (existing.get("lastUpdated") or ""):
 			continue
 		nominee_by_mobile[key] = nominee

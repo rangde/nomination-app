@@ -169,19 +169,6 @@ NOMINEES_CACHE_KEY = "rangde_nominees"
 NOMINEES_CACHE_TTL = 60
 
 
-def _log_duplicate_mobiles(nominees):
-	seen = {}
-	for nominee in nominees:
-		key = re.sub(r"\D", "", str(nominee.get("mobileNumber") or ""))[-10:]
-		if not key:
-			continue
-		if key in seen:
-			frappe.logger("nomination").warning(
-				f"RangDe nominees share mobile {key}: {seen[key]}, {nominee.get('name')}"
-			)
-		seen[key] = nominee.get("name")
-
-
 def get_nominees(force=False):
 	"""Return the RangDe nominee list (cached briefly), or None when the request fails."""
 	if not force:
@@ -207,7 +194,6 @@ def get_nominees(force=False):
 		frappe.log_error(_response_summary(response), "RangDe Nominee List Invalid JSON Response")
 		return None
 
-	_log_duplicate_mobiles(nominees)
 	frappe.cache().set_value(NOMINEES_CACHE_KEY, nominees, expires_in_sec=NOMINEES_CACHE_TTL)
 	return nominees
 
