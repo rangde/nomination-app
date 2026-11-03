@@ -434,8 +434,6 @@ def get_dashboard_didi_rows(
 		frappe.throw(frappe._("Invalid dashboard tab selected."))
 
 	nominees = get_nominees(force=bool(int(refresh or 0)))
-	if nominees is None:
-		frappe.throw(frappe._("Unable to load nominees from RangDe."))
 	nominee_by_mobile, nominees_without_mobile = {}, []
 	for nominee in nominees:
 		key = _mobile_key(nominee.get("mobileNumber"))
