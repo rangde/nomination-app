@@ -1686,29 +1686,27 @@ const clf_dashboard = {
 			clf_approved:
 				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h12v5c0 4.5-2.4 7.4-6 9-3.6-1.6-6-4.5-6-9V5Z"/><path d="m9 12 2 2 4-5"/></svg>',
 			total_registered:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9.5" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
 			under_training:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12"/><path d="M6 21h12"/><path d="M8 3v4.5c0 1.4.8 2.7 2.1 3.3L12 12l1.9-1.2A3.7 3.7 0 0 0 16 7.5V3"/><path d="M8 21v-4.5c0-1.4.8-2.7 2.1-3.3L12 12l1.9 1.2a3.7 3.7 0 0 1 2.1 3.3V21"/></svg>',
 			passed: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
 			failed: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
 			loan_applicants:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/></svg>',
 			loan_disbursed:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01"/><path d="M18 12h.01"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="7" width="18" height="10" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M7 12h.01M17 12h.01"/></svg>',
 			amount_disbursed:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3c4.97 0 9-2.24 9-5"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8M8 9h8M9 5c5 0 5 8 0 8l6 6"/></svg>',
 			median_days:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
-			assessment_completed:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6a1 1 0 0 1 1 1v1H8V4a1 1 0 0 1 1-1Z"/><path d="M16 5h2a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l4 2"/></svg>',
 			check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>',
-			home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V10l7-6 7 6v11"/><path d="M10 21v-6h4v6"/></svg>',
+			home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5"/><path d="M6.5 10.5V19h11v-8.5"/><path d="M10 19v-5h4v5"/></svg>',
 			nomination_stage:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10"/><path d="M10 20V4"/><path d="M16 20v-6"/><path d="M22 20H2"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19h16"/><path d="M7 19V9"/><path d="M12 19V5"/><path d="M17 19v-7"/></svg>',
 			training_stage:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 11v5c0 1 3 3 6 3s6-2 6-3v-5"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m4 8 8-4 8 4-8 4-8-4Z"/><path d="M7 10.5V15c0 1.7 2.2 3 5 3s5-1.3 5-3v-4.5"/></svg>',
 			loan_stage:
-				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 4h12"/><path d="M6 9h12"/><path d="M15 4c0 4-3 5-6 5l7 10"/></svg>',
+				'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8M8 9h8M9 5c5 0 5 8 0 8l6 6"/></svg>',
 		};
 		return icons[key] || frappe.utils.escape_html(fallback || "");
 	},
