@@ -163,6 +163,13 @@ class TestDidiRows(unittest.TestCase):
 		self.assertIsNone(dashboard._loan_status({"lpStatus": "Rejected", "loanId": "1"}))
 		self.assertEqual(dashboard._loan_status({"lpStatus": "", "loanId": "1"}), "applied")
 
+	def test_zero_requested_amount_is_shown_as_empty(self):
+		self.assertIsNone(dashboard._positive_amount("₹0.00"))
+		self.assertIsNone(dashboard._positive_amount(None))
+		self.assertEqual(dashboard._positive_amount("₹1,00,000.00"), "₹1,00,000.00")
+		bina = next(r for r in self.rows(tab="loan")["rows"] if r["name"] == "Bina")
+		self.assertEqual(bina["requested_amount"], "₹10,000.00")
+
 	def test_timestamps_with_z_and_offsets_are_parsed(self):
 		self.assertIsNotNone(dashboard._naive_datetime("2026-10-01T10:00:00Z"))
 		self.assertIsNotNone(dashboard._naive_datetime("2026-10-01T10:00:00+05:30"))

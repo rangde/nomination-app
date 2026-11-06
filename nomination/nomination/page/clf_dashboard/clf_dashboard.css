@@ -644,7 +644,7 @@ body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .main-sect
 	font-weight: 800;
 	color: var(--clf-text);
 	line-height: 1.1;
-	margin-top: 0;
+	margin-top: auto;
 }
 
 #clf-dashboard-root .abh-metric-label {
@@ -1450,20 +1450,19 @@ body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .main-sect
 	flex: 0 0 auto;
 }
 
-#clf-dashboard-root .abh-sheet-dot:not(.blue):not(.green) {
+#clf-dashboard-root .abh-sheet-dot:not(.blue):not(.green):not(.amber):not(.red):not(.gray) {
 	display: none;
 }
 
-#clf-dashboard-root .abh-sheet-dot.blue {
-	background: var(--clf-blue-fg);
-}
+#clf-dashboard-root .abh-sheet-dot.blue { background: var(--clf-blue-fg); }
+#clf-dashboard-root .abh-sheet-dot.green { background: var(--clf-green-fg); }
+#clf-dashboard-root .abh-sheet-dot.amber { background: var(--clf-amber-fg); }
+#clf-dashboard-root .abh-sheet-dot.red { background: var(--clf-red-fg); }
+#clf-dashboard-root .abh-sheet-dot.gray { background: var(--clf-gray-fg); }
 
-#clf-dashboard-root .abh-sheet-dot.green {
-	background: var(--clf-green-fg);
-}
-
-#clf-dashboard-root .abh-sheet-dot.active {
-	display: none;
+/* keep the dot readable on the dark selected row */
+#clf-dashboard-root .abh-sheet-option.active .abh-sheet-dot {
+	box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
 }
 
 #clf-dashboard-root .abh-sheet-check {
@@ -1761,4 +1760,25 @@ body:is([data-route="clf-dashboard"], [data-route^="clf-dashboard/"]) .main-sect
 	#clf-dashboard-root #abh-training.abh-metric-grid {
 		grid-template-columns: repeat(2, minmax(150px, 1fr));
 	}
+}
+
+/* amount sits inside the blue footer, above Last Updated */
+#clf-dashboard-root .abh-card-amount {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+#clf-dashboard-root .abh-card-amount strong {
+	font-size: 22px;
+	font-weight: 800;
+	color: var(--clf-green-fg);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+#clf-dashboard-root .abh-card-amount strong svg {
+	width: 20px;
+	height: 20px;
 }
