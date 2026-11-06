@@ -163,8 +163,10 @@ const clf_dashboard = {
 			vo_approved: "VO Approved",
 			clf_pending: "CLF Pending",
 			clf_approved: "CLF Approved",
-			total_registered: "Registered for Training",
-			under_training: "Completed Training",
+			total_registered: "Total Registered for Training",
+			tile_passed: "Total Passed Assessment",
+			tile_failed: "Total Failed Assessment",
+			under_training: "Total Completed Training",
 			passed: "Passed",
 			failed: "Failed",
 			loan_applicants: "Loan Applicants",
@@ -208,13 +210,13 @@ const clf_dashboard = {
 			no_records: "No records found.",
 			synonymous_disclaimer:
 				"{0} and {1} show the same nominations, cards are currently labeled {0}.",
-			assessment_completed: "Completed Assessment",
-			registered: "Registered",
+			assessment_completed: "Total Completed Assessment",
+			registered: "Yet to Complete Training",
 			training_completed: "Training Completed",
 			applied: "Applied",
 			disbursed: "Disbursed",
 			repaying: "Repaying",
-			all_training: "All Training",
+			all_training: "Total Registered for Training",
 			all_loan: "All Loan",
 			all_status: "All Status",
 			amount_requested: "Amount Requested",
@@ -246,8 +248,10 @@ const clf_dashboard = {
 			vo_approved: "VO से मंजूर",
 			clf_pending: "CLF लंबित",
 			clf_approved: "CLF से मंजूर",
-			total_registered: "कुल नाम दर्ज",
-			under_training: "प्रशिक्षण पूरा",
+			total_registered: "प्रशिक्षण के लिए कुल नाम दर्ज",
+			tile_passed: "कुल परीक्षा में पास",
+			tile_failed: "कुल परीक्षा में फेल",
+			under_training: "कुल प्रशिक्षण पूरा",
 			passed: "पास",
 			failed: "फेल",
 			loan_applicants: "लोन आवेदन",
@@ -291,13 +295,13 @@ const clf_dashboard = {
 			no_records: "कोई रिकॉर्ड नहीं मिला।",
 			synonymous_disclaimer:
 				"{0} और {1} में एक जैसे नामांकन हैं, कार्ड पर अभी {0} दिखाया गया है।",
-			assessment_completed: "मूल्यांकन पूरा",
-			registered: "नाम दर्ज",
+			assessment_completed: "कुल परीक्षा दी",
+			registered: "प्रशिक्षण पूरा होना बाकी",
 			training_completed: "प्रशिक्षण पूरा",
 			applied: "आवेदन किया",
 			disbursed: "लोन मिला",
 			repaying: "वापसी जारी",
-			all_training: "सभी प्रशिक्षण",
+			all_training: "प्रशिक्षण के लिए कुल नाम दर्ज",
 			all_loan: "सभी लोन",
 			all_status: "सभी स्थिति",
 			amount_requested: "माँगी गई राशि",
@@ -381,6 +385,11 @@ const clf_dashboard = {
 			const button = $(event.currentTarget);
 			const value = String(button.data("value") || "");
 			const options = button.closest(".abh-sheet-options");
+
+			if (this.is_training_status_sheet(String(button.data("dropdown-type") || ""))) {
+				this.toggle_training_option(options, button, value);
+				return;
+			}
 
 			if (!value) {
 				options.find("[data-dropdown-option]").removeClass("active");
@@ -705,8 +714,10 @@ const clf_dashboard = {
 			repaying: ["amount_repaid", row.repaid_so_far],
 		}[row.status];
 		if (!pick) return "";
-		return `<div class="abh-card-kicker">${frappe.utils.escape_html(this.t(pick[0]))}</div>
-			<div class="abh-card-stage">${frappe.utils.escape_html(pick[1] || "—")}</div>`;
+		return `<div class="abh-card-amount">
+				<strong>${this.icon("amount_disbursed")} ${frappe.utils.escape_html(pick[1] || "—")}</strong>
+				<span>${frappe.utils.escape_html(this.t(pick[0]))}</span>
+			</div>`;
 	},
 
 	didi_card(row, index = 0) {
@@ -734,8 +745,8 @@ const clf_dashboard = {
 		)}</div>
 				<div class="abh-card-kicker">${esc(this.t("status"))}</div>
 				<div class="abh-status-pill"><span></span>${esc(this.t(row.status))}</div>
-				${row.stage === "loan" ? this.didi_amount_line(row) : ""}
 				<div class="abh-card-footer">
+					${row.stage === "loan" ? this.didi_amount_line(row) : ""}
 					<div>
 						<strong>${this.icon("median_days")} ${esc(this.date_label(row.last_updated))}</strong>
 						<span>${esc(this.t("last_updated_card"))}</span>
@@ -845,7 +856,11 @@ const clf_dashboard = {
 					<div class="abh-sheet-options">
 						${config.options
 							.map((option) => {
-								const active = option.value
+								const allTicked =
+									this.is_training_status_sheet(type) && !config.selected.length;
+								const active = allTicked
+									? true
+									: option.value
 									? config.selected.includes(String(option.value))
 									: !config.selected.length;
 								return `<button class="abh-sheet-option ${
@@ -1340,11 +1355,32 @@ const clf_dashboard = {
 		return `${values.length} selected`;
 	},
 
+	// All = every status ticked. Un-ticking one leaves the other three; ticking all four (or none) goes back to All.
+	toggle_training_option(options, button, value) {
+		const items = options.find("[data-dropdown-option]");
+		const all = items.filter('[data-value=""]');
+		const specific = items.not(all);
+		if (!value) {
+			items.addClass("active");
+			return;
+		}
+		button.toggleClass("active");
+		const ticked = specific.filter(".active").length;
+		if (ticked === 0) items.addClass("active");
+		else all.toggleClass("active", ticked === specific.length);
+	},
+
 	apply_filter_sheet(type) {
-		const selected = $("#abh-filter-sheet [data-dropdown-option].active")
+		let selected = $("#abh-filter-sheet [data-dropdown-option].active")
 			.map((_, el) => String($(el).data("value") || ""))
 			.get()
 			.filter(Boolean);
+		if (
+			this.is_training_status_sheet(type) &&
+			selected.length === this.trainingStatuses.length
+		) {
+			selected = [];
+		}
 
 		if (type === "stage") {
 			this.selectedStages = selected
@@ -1425,7 +1461,13 @@ const clf_dashboard = {
 		if (value === "failed") return "red";
 		if (value === "training_completed" || value === "applied") return "amber";
 		if (value === "disbursed") return "blue";
+		if (value === "registered") return "gray";
 		return "";
+	},
+
+	// the Training status filter treats "no selection" as all four statuses ticked
+	is_training_status_sheet(type) {
+		return type === "status" && this.tab === "training" && this.listKind === "didi";
 	},
 
 	custom_select(type, label, options, selected) {
@@ -1620,6 +1662,12 @@ const clf_dashboard = {
 			</a>`;
 	},
 
+	// tiles can carry a longer label than the status chip that shares the key ("Passed" chip, "Total Passed Assessment" tile)
+	tile_label(key) {
+		const own = this.labels[this.lang][`tile_${key}`] || this.labels.en[`tile_${key}`];
+		return own || this.t(key);
+	},
+
 	metric_card(label_key, value, tone, icon, clickable = false) {
 		const numeric = typeof value !== "string";
 		const display = numeric ? 0 : value;
@@ -1634,7 +1682,7 @@ const clf_dashboard = {
 			<${tag} class="abh-metric-card ${tone} ${clickable ? "clickable" : ""}" ${attrs}>
 				<div class="abh-metric-head">
 					<div class="abh-icon">${this.icon(label_key, icon)}</div>
-					<div class="abh-metric-label">${frappe.utils.escape_html(this.t(label_key))}</div>
+					<div class="abh-metric-label">${frappe.utils.escape_html(this.tile_label(label_key))}</div>
 				</div>
 				<div class="abh-metric-value" ${numeric ? `data-count-target="${target}"` : ""}>${
 			numeric ? this.format_number(display) : frappe.utils.escape_html(display)
