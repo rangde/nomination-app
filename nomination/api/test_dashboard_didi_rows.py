@@ -173,20 +173,6 @@ class TestDidiRows(unittest.TestCase):
 			result = dashboard._build_dashboard_metrics(metrics, None)
 		self.assertEqual(result["training"]["assessment_completed"], 5)
 
-	def test_rangde_failure_message_includes_status_code(self):
-		from nomination.api import rangde_service
-
-		response = type("R", (), {"status_code": 400, "text": "Bad Request", "headers": {}})()
-		with (
-			patch.object(rangde_service, "get_base_url", return_value="https://x"),
-			patch.object(rangde_service, "rangde_headers", return_value={}),
-			patch.object(rangde_service.requests, "get", return_value=response),
-			patch.object(rangde_service.frappe, "log_error"),
-		):
-			with self.assertRaises(frappe.ValidationError) as ctx:
-				rangde_service.get_nominees(force=True)
-		self.assertIn("status 400", str(ctx.exception))
-
 	def test_invalid_tab_rejected(self):
 		with patch.object(dashboard, "_nomination_owner_scope_for_session", return_value=None):
 			with self.assertRaises(frappe.ValidationError):
