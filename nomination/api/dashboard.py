@@ -319,6 +319,14 @@ NOMINATION_STATUS_BY_WORKFLOW_STATE = {
 DIDI_TABS = ("all", "training", "loan")
 
 
+def _positive_amount(value):
+	"""RangDe sends "₹0.00" when the requested amount is missing; show nothing rather than a zero."""
+	try:
+		return value if float(re.sub(r"[^\d.]", "", str(value or "")) or 0) > 0 else None
+	except ValueError:
+		return None
+
+
 def _mobile_key(value) -> str:
 	"""RangDe stores 91XXXXXXXXXX, Nomination Form stores a plain number: match on the last 10 digits."""
 	return re.sub(r"\D", "", str(value or ""))[-10:]
@@ -411,7 +419,7 @@ def _didi_record(form: dict | None, nominee: dict | None, index: int = 0) -> dic
 		"registered_on": nominee.get("trainingRegistrationDate"),
 		"training_completed_on": nominee.get("trainingCompletedDate"),
 		"assessed_on": nominee.get("assessCompletedDate"),
-		"requested_amount": nominee.get("requestedLoanAmount"),
+		"requested_amount": _positive_amount(nominee.get("requestedLoanAmount")),
 		"disbursed_amount": nominee.get("loanAmount") if loan_status in ("disbursed", "repaying") else None,
 		"disbursed_on": nominee.get("disbursalDate"),
 		"repaid_so_far": nominee.get("repaidSoFar"),
