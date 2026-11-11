@@ -192,7 +192,7 @@ const clf_dashboard = {
 			stage: "Stage",
 			status: "Status",
 			last_updated_card: "Last Updated",
-			didis: "Didis",
+			didis: "Results",
 			group: "Group",
 			vo: "VO",
 			nominated_on: "Nominated On",
@@ -216,7 +216,7 @@ const clf_dashboard = {
 			applied: "Applied",
 			disbursed: "Disbursed",
 			repaying: "Repaying",
-			all_training: "Total Registered for Training",
+			all_training: "All",
 			all_loan: "All Loan",
 			all_status: "All Status",
 			amount_requested: "Amount Requested",
@@ -277,7 +277,7 @@ const clf_dashboard = {
 			stage: "चरण",
 			status: "स्थिति",
 			last_updated_card: "अंतिम अपडेट",
-			didis: "दीदी",
+			didis: "परिणाम",
 			group: "समूह",
 			vo: "VO",
 			nominated_on: "नामांकित तारीख",
@@ -301,7 +301,7 @@ const clf_dashboard = {
 			applied: "आवेदन किया",
 			disbursed: "लोन मिला",
 			repaying: "वापसी जारी",
-			all_training: "प्रशिक्षण के लिए कुल नाम दर्ज",
+			all_training: "सभी",
 			all_loan: "सभी लोन",
 			all_status: "सभी स्थिति",
 			amount_requested: "माँगी गई राशि",
@@ -385,11 +385,6 @@ const clf_dashboard = {
 			const button = $(event.currentTarget);
 			const value = String(button.data("value") || "");
 			const options = button.closest(".abh-sheet-options");
-
-			if (this.is_training_status_sheet(String(button.data("dropdown-type") || ""))) {
-				this.toggle_training_option(options, button, value);
-				return;
-			}
 
 			if (!value) {
 				options.find("[data-dropdown-option]").removeClass("active");
@@ -856,11 +851,7 @@ const clf_dashboard = {
 					<div class="abh-sheet-options">
 						${config.options
 							.map((option) => {
-								const allTicked =
-									this.is_training_status_sheet(type) && !config.selected.length;
-								const active = allTicked
-									? true
-									: option.value
+								const active = option.value
 									? config.selected.includes(String(option.value))
 									: !config.selected.length;
 								return `<button class="abh-sheet-option ${
@@ -1355,32 +1346,11 @@ const clf_dashboard = {
 		return `${values.length} selected`;
 	},
 
-	// All = every status ticked. Un-ticking one leaves the other three; ticking all four (or none) goes back to All.
-	toggle_training_option(options, button, value) {
-		const items = options.find("[data-dropdown-option]");
-		const all = items.filter('[data-value=""]');
-		const specific = items.not(all);
-		if (!value) {
-			items.addClass("active");
-			return;
-		}
-		button.toggleClass("active");
-		const ticked = specific.filter(".active").length;
-		if (ticked === 0) items.addClass("active");
-		else all.toggleClass("active", ticked === specific.length);
-	},
-
 	apply_filter_sheet(type) {
-		let selected = $("#abh-filter-sheet [data-dropdown-option].active")
+		const selected = $("#abh-filter-sheet [data-dropdown-option].active")
 			.map((_, el) => String($(el).data("value") || ""))
 			.get()
 			.filter(Boolean);
-		if (
-			this.is_training_status_sheet(type) &&
-			selected.length === this.trainingStatuses.length
-		) {
-			selected = [];
-		}
 
 		if (type === "stage") {
 			this.selectedStages = selected
@@ -1463,11 +1433,6 @@ const clf_dashboard = {
 		if (value === "disbursed") return "blue";
 		if (value === "registered") return "gray";
 		return "";
-	},
-
-	// the Training status filter treats "no selection" as all four statuses ticked
-	is_training_status_sheet(type) {
-		return type === "status" && this.tab === "training" && this.listKind === "didi";
 	},
 
 	custom_select(type, label, options, selected) {

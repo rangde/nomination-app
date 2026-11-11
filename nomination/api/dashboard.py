@@ -378,9 +378,15 @@ def _loan_status(nominee: dict) -> str | None:
 	return None
 
 
-def _didi_record(form: dict | None, nominee: dict | None, index: int = 0) -> dict:
-	"""One didi, with her current stage/status (the furthest stage she has reached)."""
-	training_status = _training_status(nominee) if nominee else None
+def _didi_record(
+	form: dict | None, nominee: dict | None, index: int = 0, training_nominee: dict | None = None
+) -> dict:
+	"""One didi (or one of her loans), with the stage/status she has reached.
+
+	`nominee` is the RangDe row the record is built from. For a loan card that is the loan's own row,
+	while `training_nominee` is the didi's latest row, which decides her training result.
+	"""
+	training_status = _training_status(training_nominee or nominee) if (training_nominee or nominee) else None
 	loan_status = _loan_status(nominee) if nominee else None
 	nomination_status = NOMINATION_STATUS_BY_WORKFLOW_STATE.get(form.get("workflow_state")) if form else None
 
@@ -437,17 +443,23 @@ def get_dashboard_didi_rows(
 		frappe.throw(frappe._("Invalid dashboard tab selected."))
 
 	nominees = get_nominees(force=bool(int(refresh or 0)))
-	nominee_by_mobile, nominees_without_mobile = {}, []
-	for nominee in nominees:
+	# RangDe returns one row per loan, so a person can repeat. Her latest row gives her training result
+	# (one count per didi); every loan row of hers stays its own loan card.
+	nominee_by_mobile, loans_by_mobile, nominees_without_mobile = {}, {}, []
+	for index, nominee in enumerate(nominees):
 		key = _mobile_key(nominee.get("mobileNumber"))
 		if not key:
 			nominees_without_mobile.append(nominee)
 			continue
 		existing = nominee_by_mobile.get(key)
-		# RangDe returns one row per loan, so a person can repeat; keep her latest row
-		if existing and (nominee.get("lastUpdated") or "") <= (existing.get("lastUpdated") or ""):
-			continue
-		nominee_by_mobile[key] = nominee
+		if not existing or (nominee.get("lastUpdated") or "") > (existing.get("lastUpdated") or ""):
+			nominee_by_mobile[key] = nominee
+		if _loan_status(nominee):
+			loans = loans_by_mobile.setdefault(key, {})
+			loan_id = str(nominee.get("loanId") or f"row{index}")
+			held = loans.get(loan_id)
+			if not held or (nominee.get("lastUpdated") or "") > (held.get("lastUpdated") or ""):
+				loans[loan_id] = nominee
 
 	# only the active nomination stages, like the existing list endpoints
 	form_filters = {"workflow_state": ["in", list(NOMINATION_STATUS_BY_WORKFLOW_STATE)]}
@@ -475,7 +487,16 @@ def get_dashboard_didi_rows(
 		order_by="creation asc",
 	)
 
-	records, matched = [], set()
+	def with_loans(didi, form, latest, loans):
+		"""The didi plus one card per loan (a loan card keeps her latest training result)."""
+		cards = [
+			{**_didi_record(form, loan, training_nominee=latest), "key": f"{didi['key']}:{loan_id}"}
+			for loan_id, loan in loans.items()
+		]
+		return didi, cards
+
+	didis = []  # (didi record, her loan cards)
+	matched = set()
 	for form in forms:
 		key = _mobile_key(form.mobile_number)
 		nominee = nominee_by_mobile.get(key) if key else None
@@ -485,21 +506,29 @@ def get_dashboard_didi_rows(
 			nominee = None
 		elif nominee:
 			matched.add(key)
-		records.append(_didi_record(form, nominee))
+		loans = loans_by_mobile.get(key, {}) if nominee else {}
+		didis.append(with_loans(_didi_record(form, nominee), form, nominee, loans))
 	if owners is None:
 		# RangDe-only didis (no local Nomination Form) are visible to users who see everything
-		rangde_only = [n for k, n in nominee_by_mobile.items() if k not in matched]
-		rangde_only += nominees_without_mobile
-		records += [_didi_record(None, n, index) for index, n in enumerate(rangde_only)]
+		for key, nominee in nominee_by_mobile.items():
+			if key not in matched:
+				didis.append(
+					with_loans(_didi_record(None, nominee), None, nominee, loans_by_mobile.get(key, {}))
+				)
+		for index, nominee in enumerate(nominees_without_mobile):
+			loans = {"0": nominee} if _loan_status(nominee) else {}
+			didis.append(with_loans(_didi_record(None, nominee, index), None, nominee, loans))
 
 	if tab == "training":
-		records = [r for r in records if r["training_status"]]
+		records = [d for d, _ in didis if d["training_status"]]
 		for r in records:
 			r["stage"], r["status"] = "training", r["training_status"]
 	elif tab == "loan":
-		records = [r for r in records if r["loan_status"]]
-		for r in records:
-			r["stage"], r["status"] = "loan", r["loan_status"]
+		# per loan: a didi with two loans shows two cards
+		records = [loan for _, loans in didis for loan in loans]
+	else:
+		# each didi once at her current stage; once in the loan stage, once per loan
+		records = [r for d, loans in didis for r in (loans or [d])]
 
 	status_values = set(_as_filter_values(statuses))
 	if status_values:

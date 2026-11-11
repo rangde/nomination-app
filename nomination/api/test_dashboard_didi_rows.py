@@ -156,6 +156,38 @@ class TestDidiRows(unittest.TestCase):
 		self.assertEqual(rows["NF-1"]["status"], "failed")
 		self.assertEqual(rows["NF-9"]["status"], "clf_approved")
 
+	def test_each_loan_is_its_own_card_but_training_counts_the_didi_once(self):
+		nominees = [
+			{**NOMINEES[1], "loanId": "1", "lastUpdated": "2026-10-01T10:00:00+05:30"},
+			{
+				**NOMINEES[1],
+				"loanId": "2",
+				"lpStatus": "Disbursed",
+				"lastUpdated": "2026-10-02T10:00:00+05:30",
+			},
+			{
+				**NOMINEES[1],
+				"loanId": "2",
+				"lpStatus": "Repaying",
+				"lastUpdated": "2026-10-03T10:00:00+05:30",
+			},
+		]
+		with (
+			patch.object(dashboard, "_nomination_owner_scope_for_session", return_value=None),
+			patch.object(dashboard, "get_nominees", return_value=nominees),
+			patch.object(frappe, "get_all", return_value=[]),
+		):
+			get = lambda **kw: dashboard.get_dashboard_didi_rows(**kw)["msg"]["rows"]  # noqa: E731
+			loans, everything, training = get(tab="loan"), get(tab="all"), get(tab="training")
+		# loan 2 appears once, with its latest status
+		self.assertEqual(len(loans), 2)
+		self.assertEqual(sorted(r["status"] for r in loans), ["applied", "repaying"])
+		self.assertEqual(len({r["key"] for r in loans}), 2)
+		self.assertEqual({r["training_status"] for r in loans}, {"passed"})
+		self.assertEqual(len(everything), 2)
+		self.assertEqual(len(training), 1)
+		self.assertEqual(training[0]["status"], "passed")
+
 	def test_completed_loans_stay_in_loan_tab(self):
 		self.assertEqual(dashboard._loan_status({"lpStatus": "Closed"}), "repaying")
 
