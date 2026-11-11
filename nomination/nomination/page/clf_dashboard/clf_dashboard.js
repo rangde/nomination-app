@@ -385,6 +385,7 @@ const clf_dashboard = {
 			const button = $(event.currentTarget);
 			const value = String(button.data("value") || "");
 			const options = button.closest(".abh-sheet-options");
+			const type = String(button.data("dropdown-type") || "");
 
 			if (!value) {
 				options.find("[data-dropdown-option]").removeClass("active");
@@ -392,10 +393,15 @@ const clf_dashboard = {
 				return;
 			}
 
-			options.find('[data-value=""]').removeClass("active");
+			const all = options.find('[data-value=""]');
+			const specific = options.find("[data-dropdown-option]").not(all);
+			all.removeClass("active");
 			button.toggleClass("active");
-			if (!options.find("[data-dropdown-option].active").length) {
-				options.find('[data-value=""]').addClass("active");
+			// nothing ticked, or every status ticked, is the same as All
+			const ticked = specific.filter(".active").length;
+			if (!ticked || (type === "status" && ticked === specific.length)) {
+				specific.removeClass("active");
+				all.addClass("active");
 			}
 		});
 
