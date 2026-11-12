@@ -191,7 +191,9 @@ def get_nominees(force=False):
 		)
 
 	try:
-		nominees = (response.json() or {}).get("nominees") or []
+		body = response.json() or {}
+		# RangDe has returned the list under both "nominees" and "data"
+		nominees = body.get("nominees") or body.get("data") or []
 	except ValueError:
 		frappe.log_error(_response_summary(response), "RangDe Nominee List Invalid JSON Response")
 		frappe.throw(frappe._("Unable to load nominees from RangDe (invalid response)."))
