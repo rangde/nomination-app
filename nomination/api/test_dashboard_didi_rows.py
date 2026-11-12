@@ -226,6 +226,28 @@ class TestDidiRows(unittest.TestCase):
 				rangde_service.get_nominees(force=True)
 		self.assertIn("status 400", str(ctx.exception))
 
+	def test_nominee_list_is_read_from_nominees_or_data_key(self):
+		from nomination.api import rangde_service
+
+		for key in ("nominees", "data"):
+			response = type(
+				"R",
+				(),
+				{
+					"status_code": 200,
+					"text": "",
+					"headers": {},
+					"json": lambda self, k=key: {k: [{"name": "A"}]},
+				},
+			)()
+			with (
+				patch.object(rangde_service, "get_base_url", return_value="https://x"),
+				patch.object(rangde_service, "rangde_headers", return_value={}),
+				patch.object(rangde_service.requests, "get", return_value=response),
+				patch.object(rangde_service.frappe, "cache"),
+			):
+				self.assertEqual(rangde_service.get_nominees(force=True), [{"name": "A"}])
+
 	def test_invalid_tab_rejected(self):
 		with patch.object(dashboard, "_nomination_owner_scope_for_session", return_value=None):
 			with self.assertRaises(frappe.ValidationError):
