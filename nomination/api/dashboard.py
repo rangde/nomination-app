@@ -363,6 +363,11 @@ def _training_status(nominee: dict) -> str:
 	result = (nominee.get("taStatus") or "").strip().lower()
 	if result in ("passed", "failed"):
 		return result
+	# taStatus decides; a completed date can be set on didis who are still "Registered"
+	if result == "training completed":
+		return "training_completed"
+	if result == "registered":
+		return "registered"
 	return "training_completed" if nominee.get("trainingCompletedDate") else "registered"
 
 
