@@ -133,8 +133,8 @@ const clf_dashboard = {
 		passed: { tab: "training", statuses: ["passed"] },
 		failed: { tab: "training", statuses: ["failed"] },
 		loan_applicants: { tab: "loan", statuses: [] },
-		loan_disbursed: { tab: "loan", statuses: ["disbursed", "repaying"] },
-		amount_disbursed: { tab: "loan", statuses: ["disbursed", "repaying"] },
+		loan_disbursed: { tab: "loan", statuses: ["disbursed"] },
+		amount_disbursed: { tab: "loan", statuses: ["disbursed"] },
 	},
 	didiData: { rows: [], total: 0, vos: [], shgs: [] },
 	counterFrame: null,
@@ -1742,7 +1742,9 @@ const clf_dashboard = {
 	},
 
 	money(value) {
-		return `₹${this.num(value).toLocaleString("en-IN")}`;
+		// RangDe sends the amount as text, e.g. "₹42,500.00"
+		const parsed = Number(String(value ?? "").replace(/[^\d.-]/g, ""));
+		return `₹${(Number.isFinite(parsed) ? parsed : 0).toLocaleString("en-IN")}`;
 	},
 
 	format_time(date) {
