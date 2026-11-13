@@ -188,6 +188,16 @@ class TestDidiRows(unittest.TestCase):
 		self.assertEqual(len(training), 1)
 		self.assertEqual(training[0]["status"], "passed")
 
+	def test_training_status_follows_ta_status_not_the_completed_date(self):
+		date = "2026-04-21T17:16:29+05:30"
+		status = dashboard._training_status
+		self.assertEqual(status({"taStatus": "Registered", "trainingCompletedDate": date}), "registered")
+		self.assertEqual(status({"taStatus": "Training Completed"}), "training_completed")
+		self.assertEqual(status({"taStatus": "Passed"}), "passed")
+		# no taStatus: fall back to the date
+		self.assertEqual(status({"trainingCompletedDate": date}), "training_completed")
+		self.assertEqual(status({}), "registered")
+
 	def test_completed_loans_stay_in_loan_tab(self):
 		self.assertEqual(dashboard._loan_status({"lpStatus": "Closed"}), "repaying")
 
