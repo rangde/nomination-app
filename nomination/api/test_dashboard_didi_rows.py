@@ -208,8 +208,12 @@ class TestDidiRows(unittest.TestCase):
 
 	def test_assessment_completed_falls_back_when_null(self):
 		metrics = {"completedAssessment": None, "passed": 2, "failed": 3}
-		with patch.object(dashboard, "_count_nomination_forms", return_value=0):
-			result = dashboard._build_dashboard_metrics(metrics, None)
+		with (
+			patch.object(dashboard, "get_metrics", return_value=metrics),
+			patch.object(dashboard, "_nomination_owner_scope_for_session", return_value=None),
+			patch.object(dashboard, "_count_nomination_forms", return_value=0),
+		):
+			result = dashboard.get_dashboard_metrics()
 		self.assertEqual(result["training"]["assessment_completed"], 5)
 
 	def test_rangde_failure_message_includes_status_code(self):
